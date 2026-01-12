@@ -1,5 +1,6 @@
 #include "Universe.h"
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <functional>
@@ -9,15 +10,29 @@
 #include "raylib.h"
 
 namespace Universe {
-    std::vector<GameObject*>* game_objects; // unique pointers?
+    std::vector<GameObject*> game_objects; // unique pointers?
+    std::vector<std::function<void()>> deferred_actions;
     Camera2D camera;
 
     bool shutdown = false;
     double gameTime = 0.0;
     double timeScale = 1.0;
+    ResourceManager* resourceManager;
 
     std::vector<GameObject*>& getGameObjects() {
-        return *game_objects;
+        return game_objects;
+    }
+
+    void defer(const std::function<void()> &f) {
+        deferred_actions.push_back(f);
+    }
+
+    void runDeferred() {
+        while (!deferred_actions.empty()) {
+            auto last = deferred_actions.back();
+            deferred_actions.pop_back();
+            last();
+        }
     }
 
     void renderAll() {
@@ -25,7 +40,7 @@ namespace Universe {
         ClearBackground(WHITE);
         BeginMode2D(camera);
 
-        for (const auto game_object : *game_objects) {
+        for (const auto game_object : game_objects) {
             game_object->render2d();
         }
 
@@ -36,31 +51,34 @@ namespace Universe {
     }
 
     void updateAll() {
-        for (const auto game_object : *game_objects) {
+        for (const auto game_object : game_objects) {
             game_object->update();
         }
     }
 
-    void deInit() {
-        for (const GameObject* object : *game_objects) {
+    void deInit(const std::function<void()>& stop) {
+        std::cout << "Shutting down ..." << std::endl;
+        for (const auto object : game_objects) {
             delete object;
         }
+        delete resourceManager;
+
+        stop();
 
         CloseWindow();
-        delete game_objects;
     }
 
     void runBlocking() {
         while (!WindowShouldClose() && !shutdown) {
             updateAll();
             renderAll();
+            runDeferred();
 
             gameTime += getScaledDeltaTime();
         }
     }
 
-    void init(const int width, const int height, const char* title, const std::function<void()>& start) {
-        game_objects = new std::vector<GameObject*>();
+    void init(const int width, const int height, const char* title, const std::function<void()>& start, const std::function<void()>& stop) {
         camera = {
             .offset = {static_cast<float>(width)/2.0f, static_cast<float>(height)/2.0f},
             .target = {0, 0},
@@ -68,12 +86,14 @@ namespace Universe {
             .zoom = 1.0f,
         };
 
+        resourceManager = new ResourceManager;
+
         InitWindow(width, height, title);
 
         start();
 
         runBlocking();
-        deInit();
+        deInit(stop);
     }
 
     Camera2D* getCamera() {
@@ -90,5 +110,9 @@ namespace Universe {
 
     double getGameTime() {
         return gameTime;
+    }
+
+    ResourceManager* getResourceManager() {
+         return resourceManager;
     }
 } // Universe

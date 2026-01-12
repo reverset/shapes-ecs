@@ -6,11 +6,15 @@
 #include <functional>
 
 #include "GameObject.h"
+#include "resource.h"
 #include "vec.h"
 
 namespace Universe {
+    ResourceManager* getResourceManager();
 
-    void init(int width, int height, const char* title, const std::function<void()>& start);
+    void defer(const std::function<void()>& f);
+
+    void init(int width, int height, const char* title, const std::function<void()>& start, const std::function<void()>& stop);
 
     std::vector<GameObject*>& getGameObjects();
 
@@ -18,6 +22,7 @@ namespace Universe {
         requires std::derived_from<T, GameObject>
     T* instantiate(T* obj) {
         getGameObjects().push_back(obj);
+        obj->ready();
 
         return obj;
     }

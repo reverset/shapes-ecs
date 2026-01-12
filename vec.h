@@ -3,7 +3,7 @@
 
 #include <raylib.h>
 #include <string>
-#include <format>
+#include <cmath>
 
 struct Vec2 {
     float x, y;
@@ -62,7 +62,7 @@ struct Vec2 {
     }
 
     [[nodiscard]] float toAngle() const {
-        return std::atan2f(y, x);
+        return std::atan2(y, x);
     }
 
     [[nodiscard]] float dot(const Vec2& other) const {
@@ -85,10 +85,6 @@ struct Vec2 {
 
     [[nodiscard]] Vector2 toRaylibVector2() const {
         return Vector2{x, y};
-    }
-
-    [[nodiscard]] std::string toString() const {
-        return std::format("Vec2(x={}, y={})", x, y);
     }
 };
 

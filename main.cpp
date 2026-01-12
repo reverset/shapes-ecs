@@ -1,9 +1,11 @@
 #include <iostream>
 
+#include "Files.h"
 #include "GameObject.h"
 #include "raylib.h"
 #include "timer.h"
 #include "Universe.h"
+#include "resource.h"
 
 class Player : public GameObject {
     static constexpr int DIM = 50;
@@ -11,10 +13,15 @@ class Player : public GameObject {
     Vec2 slashDir = {0, 0};
 
     GameTimer slashTimer = GameTimer::ofGameTime();
+    TextureResource* tex = nullptr;
+
+public:
+    void ready() override {
+        tex = *Universe::getResourceManager()->getResource<TextureResource>("floorTile");
+    }
 
     void update() override {
         if (slashTimer.hasElapsed(0.1)) slashTimer.stop();
-
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !slashTimer.isRunning()) {
             const auto mpos = Universe::getMouseWorldPosition();
@@ -35,7 +42,8 @@ class Player : public GameObject {
     }
 
     void render2d() override {
-        DrawRectangle(static_cast<int>(position.x), static_cast<int>(position.y), DIM, DIM, RED);
+        // DrawRectangle(static_cast<int>(position.x), static_cast<int>(position.y), DIM, DIM, RED);
+        tex->render(position, 0.0f, 5.0f, WHITE);
 
         if (slashTimer.isRunning()) {
             const auto desiredPos = getCenterPos() + slashDir * 150;
@@ -45,8 +53,15 @@ class Player : public GameObject {
 };
 
 int main() {
-    Universe::init(640, 360, "Game",  [] {
+    auto* tex = new Texture2D();
+
+    Universe::init(640, 360, "Game",  [tex] {
+        Universe::getResourceManager()->registerResource(
+            "floorTile",
+            new TextureResource("floorTile.png"));
+
         Universe::instantiate(new Player());
+    }, [tex] {
     });
 
     return 0;
