@@ -8,10 +8,23 @@
 
 #include "GameObject.h"
 #include "raylib.h"
+#include "UIObject.h"
 
 namespace Universe {
-    std::vector<GameObject*> game_objects; // unique pointers?
-    std::vector<std::function<void()>> deferred_actions;
+    std::vector<GameObject*> gameObjects; // unique pointers?
+    std::vector<std::function<void()>> deferredActions;
+    std::vector<std::unique_ptr<UIObject>> uiObjects;
+
+    int resolutionX, resolutionY;
+
+    int getResolutionX() {
+        return resolutionX;
+    }
+
+    int getResolutionY() {
+        return resolutionY;
+    }
+
     Camera2D camera;
 
     bool shutdown = false;
@@ -19,19 +32,30 @@ namespace Universe {
     double timeScale = 1.0;
     ResourceManager* resourceManager;
 
-    std::vector<GameObject*>& getGameObjects() {
-        return game_objects;
+    std::vector<GameObject*>* getGameObjects() {
+        return &gameObjects;
+    }
+
+    std::vector<std::unique_ptr<UIObject>>* getUIObjects() {
+        return &uiObjects;
     }
 
     void defer(const std::function<void()> &f) {
-        deferred_actions.push_back(f);
+        deferredActions.push_back(f);
     }
 
     void runDeferred() {
-        while (!deferred_actions.empty()) {
-            auto last = deferred_actions.back();
-            deferred_actions.pop_back();
+        while (!deferredActions.empty()) {
+            auto last = deferredActions.back();
+            deferredActions.pop_back();
             last();
+        }
+    }
+
+    void paintUi() {
+        for (auto& obj : uiObjects) {
+            auto* ptr = obj.get();
+            ptr->draw();
         }
     }
 
@@ -40,25 +64,27 @@ namespace Universe {
         ClearBackground(WHITE);
         BeginMode2D(camera);
 
-        for (const auto game_object : game_objects) {
-            game_object->render2d();
+        for (const auto go : gameObjects) {
+            go->render2d();
         }
 
         EndMode2D();
+
+        paintUi();
 
         DrawFPS(15, 15);
         EndDrawing();
     }
 
     void updateAll() {
-        for (const auto game_object : game_objects) {
+        for (const auto game_object : gameObjects) {
             game_object->update();
         }
     }
 
     void deInit(const std::function<void()>& stop) {
         std::cout << "Shutting down ..." << std::endl;
-        for (const auto object : game_objects) {
+        for (const auto object : gameObjects) {
             delete object;
         }
         delete resourceManager;
@@ -79,6 +105,9 @@ namespace Universe {
     }
 
     void init(const int width, const int height, const char* title, const std::function<void()>& start, const std::function<void()>& stop) {
+        resolutionX = width;
+        resolutionY = height;
+
         camera = {
             .offset = {static_cast<float>(width)/2.0f, static_cast<float>(height)/2.0f},
             .target = {0, 0},

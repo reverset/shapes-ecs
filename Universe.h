@@ -5,8 +5,10 @@
 
 #include <functional>
 
+#include "util.h"
 #include "GameObject.h"
 #include "resource.h"
+#include "UIObject.h"
 #include "vec.h"
 
 namespace Universe {
@@ -16,15 +18,50 @@ namespace Universe {
 
     void init(int width, int height, const char* title, const std::function<void()>& start, const std::function<void()>& stop);
 
-    std::vector<GameObject*>& getGameObjects();
+    int getResolutionX();
+    int getResolutionY();
+
+    std::vector<std::unique_ptr<UIObject>>* getUIObjects();
+
+    std::vector<GameObject*>* getGameObjects();
 
     template <class T>
         requires std::derived_from<T, GameObject>
     T* instantiate(T* obj) {
-        getGameObjects().push_back(obj);
+        auto gos = getGameObjects();
+        // gos->push_back(obj);
+
+        const std::function<int(GameObject* const &, GameObject* const &)> cmp = [](GameObject* const & a, GameObject* const & b) {
+            return b->processLayer - a->processLayer;
+        };
+
+        GameUtil::insertSorted<GameObject*>(gos, obj, cmp);
+
         obj->ready();
 
         return obj;
+    }
+
+    template <class T>
+        requires std::derived_from<T, GameObject>
+    T* findByName(const std::string& name) {
+        for (auto obj : *getGameObjects()) {
+            if (obj->name == name) {
+                return dynamic_cast<T*>(obj);
+            }
+        }
+        return nullptr;
+    }
+
+    template <class T>
+        requires std::derived_from<T, UIObject>
+    void addUiElement(std::unique_ptr<T>&& ui) {
+        auto uiEles = getUIObjects();
+
+        // TODO
+        GameUtil::insertSorted<std::unique_ptr<UIObject>>(uiEles, std::move(ui), [](const std::unique_ptr<UIObject>& a, const std::unique_ptr<UIObject>& b) {
+            return b->layer - a->layer;
+        });
     }
 
     inline float getAxisInput(const KeyboardKey neg, const KeyboardKey pos) {

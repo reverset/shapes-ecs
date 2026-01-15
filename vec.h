@@ -2,7 +2,6 @@
 #define GAME_VEC_H
 
 #include <raylib.h>
-#include <string>
 #include <cmath>
 
 struct Vec2 {
@@ -90,5 +89,16 @@ struct Vec2 {
 
 
 const Vec2 VEC2_ZERO = {0, 0};
+
+struct PercentVec2 { // todo: corner and more (maybe wont use this)
+    float px, py;
+
+    [[nodiscard]] Vec2 intoVec2(const int resX, const int resY) const {
+        float x = static_cast<float>(resX) / px;
+        float y = static_cast<float>(resY) / py;
+
+        return {x, y};
+    }
+};
 
 #endif //GAME_VEC_H

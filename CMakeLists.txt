@@ -23,6 +23,8 @@ add_executable(game
         timer.h
         Files.h
         Resource.h
+        util.h
+        UIObject.h
 )
 
 target_link_libraries(game PRIVATE raylib)
