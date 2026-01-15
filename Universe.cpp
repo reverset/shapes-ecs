@@ -9,11 +9,14 @@
 #include "GameObject.h"
 #include "raylib.h"
 #include "UIObject.h"
+#include "inputsys.h"
 
 namespace Universe {
     std::vector<GameObject*> gameObjects; // unique pointers?
     std::vector<std::function<void()>> deferredActions;
     std::vector<std::unique_ptr<UIObject>> uiObjects;
+
+    Input input;
 
     int resolutionX, resolutionY;
 
@@ -38,6 +41,10 @@ namespace Universe {
 
     std::vector<std::unique_ptr<UIObject>>* getUIObjects() {
         return &uiObjects;
+    }
+
+    Input *getInputManager() {
+        return &input;
     }
 
     void defer(const std::function<void()> &f) {

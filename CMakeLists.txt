@@ -25,6 +25,7 @@ add_executable(game
         Resource.h
         util.h
         UIObject.h
+        inputsys.h
 )
 
 target_link_libraries(game PRIVATE raylib)

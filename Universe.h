@@ -10,9 +10,11 @@
 #include "resource.h"
 #include "UIObject.h"
 #include "vec.h"
+#include "inputsys.h"
 
 namespace Universe {
     ResourceManager* getResourceManager();
+    Input* getInputManager();
 
     void defer(const std::function<void()>& f);
 

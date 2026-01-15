@@ -9,6 +9,7 @@
 #include "Universe.h"
 #include "resource.h"
 #include "UIObject.h"
+#include "GLFW/glfw3.h"
 
 class CameraController : public GameObject {
     Camera2D* camera = nullptr;
@@ -69,7 +70,7 @@ public:
             slashTimer.reset();
         }
 
-        const Vec2 movDelta = Universe::getVectorInput(KEY_A, KEY_D, KEY_W, KEY_S);
+        const Vec2 movDelta = Universe::getInputManager()->testVec2Bind(KeyboardAndMouse, "movement");
 
         position += movDelta * (Universe::getScaledDeltaTime() * SPEED);
     }
@@ -84,6 +85,8 @@ public:
     }
 };
 
+void defineKeybindings();
+
 int main() {
     Universe::init(640, 360, "Game", [] {
         const auto man = Universe::getResourceManager();
@@ -96,6 +99,8 @@ int main() {
             "player",
             new TextureResource("player.png"));
 
+        defineKeybindings();
+
         Universe::instantiate(new CameraController());
         Universe::instantiate(new Player());
 
@@ -104,4 +109,17 @@ int main() {
     });
 
     return 0;
+}
+
+void defineKeybindings() {
+    // Universe::getInputManager()->bindBoolean("moveUp", BooleanGamepadBinding { // testing
+    //     .keyboard = []{ return IsKeyPressed(KEY_W); },
+    //     .gamepad = [](const int id){ return IsGamepadButtonPressed(id, GAMEPAD_BUTTON_RIGHT_FACE_DOWN); },
+    // });
+
+    // TODO, deadzone
+    Universe::getInputManager()->bindVector2("movement", Vec2GamepadBinding {
+        .keyboard = [] { return Universe::getVectorInput(KEY_A, KEY_D, KEY_W, KEY_S); },
+        .gamepad = [](const int id) { return Vec2{GetGamepadAxisMovement(id, GAMEPAD_AXIS_LEFT_X), GetGamepadAxisMovement(id, GAMEPAD_AXIS_LEFT_Y)}; },
+    });
 }
