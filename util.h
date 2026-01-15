@@ -12,7 +12,7 @@ namespace GameUtil {
     void insertSorted(std::vector<T>* list, T&& item, const std::function<int(const T&, const T&)>& comparator) {
         for (size_t i = 0; i < list->size(); i++) {
             if (comparator(list->at(i), item) >= 0) {
-                list->insert(list->begin() + i, item);
+                list->insert(list->begin() + i, std::move(item));
                 return;
             }
         }

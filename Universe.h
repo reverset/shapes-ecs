@@ -58,7 +58,6 @@ namespace Universe {
     void addUiElement(std::unique_ptr<T>&& ui) {
         auto uiEles = getUIObjects();
 
-        // TODO
         GameUtil::insertSorted<std::unique_ptr<UIObject>>(uiEles, std::move(ui), [](const std::unique_ptr<UIObject>& a, const std::unique_ptr<UIObject>& b) {
             return b->layer - a->layer;
         });

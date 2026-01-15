@@ -99,7 +99,7 @@ int main() {
         Universe::instantiate(new CameraController());
         Universe::instantiate(new Player());
 
-        Universe::addUiElement(std::make_unique<WeaponHUD>());
+        Universe::addUiElement(std::move(std::make_unique<WeaponHUD>()));
     }, [] {
     });
 
