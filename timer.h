@@ -40,8 +40,8 @@ class GameTimer : public GameObject {
         return time < getElapsed();
     }
 
-    bool hasElapsedAdvance() {
-        const bool el = hasElapsed(getElapsed());
+    bool hasElapsedAdvance(const double time) {
+        const bool el = hasElapsed(time);
         if (el) reset();
         return el;
     }

@@ -3,6 +3,10 @@
 
 #include <raylib.h>
 #include <cmath>
+#include <string>
+
+#include "RandomGen.h"
+#include "util.h"
 
 struct Vec2 {
     float x, y;
@@ -14,6 +18,11 @@ struct Vec2 {
         const Vec2 res = {x, y};
         const float desiredMag = magnitude / res.magnitude(); // normalize then multiply by magnitude
         return res * desiredMag;
+    }
+
+    static Vec2 randomDirection(const float magnitude) {
+        const double angle = RandomGen::randomNormalized() * PI * 2;
+        return fromAngle(static_cast<float>(angle), magnitude);
     }
 
     Vec2(const Vector2 other) {
@@ -78,12 +87,30 @@ struct Vec2 {
         return {x/mag, y/mag};
     }
 
+    [[nodiscard]] Vec2 moveTowards(const Vec2 target, const float delta) const {
+        return {
+            GameUtil::moveTowards(x, target.x, delta),
+            GameUtil::moveTowards(y, target.y, delta),
+        };
+    }
+
+    [[nodiscard]] Vec2 moveTowardsMagnitude(const float target, const float delta) const {
+        const float angle = toAngle();
+        const float mag = magnitude();
+
+        return fromAngle(angle, GameUtil::moveTowards(mag, target, delta));
+    }
+
     operator Vector2() const {
         return toRaylibVector2();
     }
 
     [[nodiscard]] Vector2 toRaylibVector2() const {
         return Vector2{x, y};
+    }
+
+    [[nodiscard]] std::string toString() const {
+        return GameUtil::string_format("Vec2(x=%f, y=%f)", x, y);
     }
 };
 

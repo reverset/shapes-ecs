@@ -10,7 +10,6 @@
 #include <stdexcept>
 
 namespace GameUtil {
-    // TODO broken rn
     template <typename T>
     void insertSorted(std::vector<T>* list, T&& item, const std::function<int(const T&, const T&)>& comparator) {
         for (size_t i = 0; i < list->size(); i++) {
@@ -32,6 +31,18 @@ namespace GameUtil {
         std::unique_ptr<char[]> buf( new char[ size ] );
         std::snprintf( buf.get(), size, format.c_str(), args ... );
         return std::string( buf.get(), buf.get() + size - 1 ); // We don't want the '\0' inside
+    }
+
+
+    template <typename T>
+    T clamp(T val, T min, T max) {
+        return std::min(std::max(val, min), max);
+    }
+
+    template <typename T>
+    T moveTowards(T val, T target, T delta) {
+        T actualDelta = std::min(delta, std::abs(target - val));
+        return val + std::copysign(actualDelta, target - val);
     }
 }
 

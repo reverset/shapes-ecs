@@ -10,6 +10,7 @@
 #include "resource.h"
 #include "UIObject.h"
 #include "GLFW/glfw3.h"
+#include "ParticleSystem.h"
 
 class CameraController : public GameObject {
     Camera2D* camera = nullptr;
@@ -45,8 +46,14 @@ class Player : public GameObject {
     Vec2 slashDir = {0, 0};
 
     GameTimer slashTimer = GameTimer::ofGameTime();
+
     TextureResource* tex = nullptr;
+    TextureResource* slashEffectTexture = nullptr;
+
+    CPUParticleEmitter* slashEffect = nullptr;
+
     CameraController* cameraController = nullptr;
+
 
 public:
     Player() {
@@ -55,17 +62,29 @@ public:
 
     void ready() override {
         tex = *Universe::getResourceManager()->getResource<TextureResource>("player");
+        slashEffectTexture = *Universe::getResourceManager()->getResource<TextureResource>("spark");
+
+        slashEffect = Universe::instantiate(ParticlePresets::pop(5, 0.5, slashEffectTexture, 1.0f));
+        slashEffect->setEnabled(false);
+
         cameraController = Universe::findByName<CameraController>("CameraController");
         cameraController->zoom = 3.0f;
     }
 
     void update() override {
-        if (slashTimer.hasElapsed(0.1)) slashTimer.stop();
+        if (slashTimer.hasElapsed(0.1)) {
+            slashTimer.stop();
+            slashEffect->setEnabled(false); // improve
+        }
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !slashTimer.isRunning()) {
             const auto mpos = Universe::getMouseWorldPosition();
 
             slashDir = (mpos - position).normalizeOrZero();
+            const auto desiredPos = position + slashDir * 50;
+
+            slashEffect->position = desiredPos;
+            slashEffect->setEnabled(true);
 
             slashTimer.reset();
         }
@@ -98,6 +117,10 @@ int main() {
         man->registerResource(
             "player",
             new TextureResource("player.png"));
+
+        man->registerResource(
+            "spark",
+            new TextureResource("spark.png"));
 
         defineKeybindings();
 

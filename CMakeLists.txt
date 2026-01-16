@@ -26,6 +26,9 @@ add_executable(game
         util.h
         UIObject.h
         inputsys.h
+        ParticleSystem.h
+        RandomGen.cpp
+        RandomGen.h
 )
 
 target_link_libraries(game PRIVATE raylib)

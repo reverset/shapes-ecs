@@ -10,6 +10,7 @@
 #include "raylib.h"
 #include "UIObject.h"
 #include "inputsys.h"
+#include "RandomGen.h"
 
 namespace Universe {
     std::vector<GameObject*> gameObjects; // unique pointers?
@@ -68,7 +69,7 @@ namespace Universe {
 
     void renderAll() {
         BeginDrawing();
-        ClearBackground(WHITE);
+        ClearBackground(DARKGRAY);
         BeginMode2D(camera);
 
         for (const auto go : gameObjects) {
@@ -124,6 +125,7 @@ namespace Universe {
 
         resourceManager = new ResourceManager;
 
+        RandomGen::init();
         InitWindow(width, height, title);
 
         start();
