@@ -3,6 +3,7 @@
 
 #include <random>
 #include <chrono>
+#include <optional>
 
 namespace RandomGen {
     std::optional<std::minstd_rand> engine = std::nullopt;

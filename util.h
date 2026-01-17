@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <stdexcept>
+#include <cmath>
 
 namespace GameUtil {
     template <typename T>

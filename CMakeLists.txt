@@ -22,7 +22,7 @@ add_executable(game
         vec.h
         timer.h
         Files.h
-        Resource.h
+        resource.h
         util.h
         UIObject.h
         inputsys.h
