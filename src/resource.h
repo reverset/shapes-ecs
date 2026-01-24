@@ -64,7 +64,11 @@ public:
         return texture;
     }
 
-    void render(const Vec2 pos, const float rotation, const float scale, const Color tint) {
+    void render(const Vec2 pos, const float rotation, const float scale, const Color& tint) {
+        renderEx(pos, VEC2_ZERO, rotation, scale, tint);
+    }
+
+    void renderEx(const Vec2 pos, const Vec2 offset, const float rotation, const float scale, const Color& tint) {
         if (!isLoaded()) throw std::runtime_error("attempt to render unloaded resource");
 
         const auto w = static_cast<float>(texture->width);
@@ -74,7 +78,7 @@ public:
         const auto sh = h * scale;
 
         DrawTexturePro(*texture,
-            {0, 0, w, h},
+            {offset.x, offset.y, w, h},
             {pos.x, pos.y, sw, sh},
             {sw/2.0f, sh/2.0f},
             rotation,

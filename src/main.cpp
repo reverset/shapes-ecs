@@ -12,7 +12,8 @@
 #include "UIObject.h"
 #include "ParticleSystem.h"
 #include "ecs.h"
-#include "iter.h"
+#include "components/standardcomponents.h"
+#include "engine-ecs/rendering.h"
 
 class CameraControllerScript : public GameObject {
     Camera2D* camera = nullptr;
@@ -111,64 +112,35 @@ public:
 
 struct Player : Component<Player> {
     COMPONENT_STORAGE(Player);
-
-    TextureResource* tex;
-
-    explicit Player(TextureResource* tex) {
-        this->tex = tex;
-    }
 };
 
-struct Transform2d : Component<Transform2d> {
-    COMPONENT_STORAGE(Transform2d);
+void defineKeybindings() {
+    // Universe::getInputManager()->bindBoolean("moveUp", BooleanGamepadBinding { // testing
+    //     .keyboard = []{ return IsKeyPressed(KEY_W); },
+    //     .gamepad = [](const int id){ return IsGamepadButtonPressed(id, GAMEPAD_BUTTON_RIGHT_FACE_DOWN); },
+    // });
 
-    Vec2 position = {0, 0};
-};
+    // TODO, deadzone
+    Universe::getInputManager()->bindVector2("movement", Vec2GamepadBinding {
+        .keyboard = [] { return Universe::getVectorInput(KEY_A, KEY_D, KEY_W, KEY_S); },
+        .gamepad = [](const int id) { return Vec2{GetGamepadAxisMovement(id, GAMEPAD_AXIS_LEFT_X), GetGamepadAxisMovement(id, GAMEPAD_AXIS_LEFT_Y)}; },
+    });
+}
 
-void defineKeybindings();
-
-class TestComp : public Component<TestComp> {
-public:
-    COMPONENT_STORAGE(TestComp);
-
-    std::int32_t someData = 0;
-};
-
-class NameTag : public Component<NameTag> {
-public:
-    COMPONENT_STORAGE(NameTag);
-    std::string name;
-
-    explicit NameTag(std::string name) : name(std::move(name)) {}
-
-};
-
-void playerMovement(const Entity, const Player&, Transform2d& trans) {
+void playerMovement(const Entity e, const Player&, Transform2d& trans) {
     const Vec2 movDelta = Universe::getInputManager()->testVec2Bind(KeyboardAndMouse, "movement");
 
     static constexpr int SPEED = 100;
     trans.position += movDelta * (Universe::getScaledDeltaTime() * SPEED);
-}
 
-// TODO, generic sprite component and stuff
-void renderPlayer(const Entity, const Player& player, const Transform2d& trans) {
-    player.tex->render(trans.position, 0.0f, 1.0f, WHITE);
+    if (IsKeyPressed(KEY_J)) {
+        Universe::defer([e] {
+            Universe::getEntityStorage().destroyEntity(e);
+        });
+    }
 }
 
 int main() {
-    // auto es = EntityStorage();
-    //
-    // es.makeEntity()
-    //     .addComponent(NameTag("test"));
-    //
-    // es.makeEntity()
-    //     .addComponent(TestComp())
-    //     .addComponent(NameTag("other"));
-    //
-    // ECS::query<NameTag, TestComp>([](const Entity e, const NameTag& c, const TestComp& test) {
-    //     Logging::log("id=%d, name: %s, test=%d", e.id, c.name.c_str(), test.someData);
-    // });
-
     Universe::init(640, 360, "Game", [] {
         const auto man = Universe::getResourceManager();
 
@@ -188,11 +160,15 @@ int main() {
 
         Universe::getCamera()->zoom = 3.0f;
 
+        RenderingSystems::registerAll();
+
         Universe::onUpdate.registerSystem<Player, Transform2d>(playerMovement);
-        Universe::onRender2d.registerSystem<Player, Transform2d>(renderPlayer);
+
+        const auto playerTexture = *man->getResource<TextureResource>("player");
 
         Universe::getEntityStorage().makeEntity()
-            .addComponent(Player(*man->getResource<TextureResource>("player")))
+            .addComponent(Player())
+            .addComponent(Sprite(playerTexture))
             .addComponent(Transform2d());
     }, [] {});
 
@@ -220,19 +196,4 @@ int main() {
     // }, [] {});
 
     return 0;
-}
-
-
-
-void defineKeybindings() {
-    // Universe::getInputManager()->bindBoolean("moveUp", BooleanGamepadBinding { // testing
-    //     .keyboard = []{ return IsKeyPressed(KEY_W); },
-    //     .gamepad = [](const int id){ return IsGamepadButtonPressed(id, GAMEPAD_BUTTON_RIGHT_FACE_DOWN); },
-    // });
-
-    // TODO, deadzone
-    Universe::getInputManager()->bindVector2("movement", Vec2GamepadBinding {
-        .keyboard = [] { return Universe::getVectorInput(KEY_A, KEY_D, KEY_W, KEY_S); },
-        .gamepad = [](const int id) { return Vec2{GetGamepadAxisMovement(id, GAMEPAD_AXIS_LEFT_X), GetGamepadAxisMovement(id, GAMEPAD_AXIS_LEFT_Y)}; },
-    });
 }

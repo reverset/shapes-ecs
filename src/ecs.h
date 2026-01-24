@@ -6,6 +6,7 @@
 #include <memory>
 #include <functional>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "iter.h"
 #include "logging.h"
@@ -63,6 +64,11 @@ struct ComponentStorage {
     }
 
     void remove(const Entity e) {
+        if (!sparse.contains(e)) {
+            Logging::logWarn("attempt to remove entity from component storage, when it never was present. id=%zu", e.id);
+            return;
+        }
+
         auto i = sparse[e];
         auto last = dense.size() - 1;
 
@@ -85,6 +91,30 @@ public:
     virtual ~Component() = default;
 };
 
+class DynamicComponent {
+    std::function<void(Entity)> removeImpl;
+    std::function<bool(Entity)> containsImpl;
+public:
+    [[nodiscard]] bool contains(const Entity e) const {
+        return containsImpl(e);
+    }
+
+    void remove(const Entity e) {
+        removeImpl(e);
+    }
+
+    template <typename T>
+    static DynamicComponent of(Component<T>& comp) {
+        const auto store = comp.getComponentStorage();
+        return DynamicComponent([store](Entity e) { return store->contains(e); }, [store](Entity e) { return store->remove(e); });
+    }
+
+    explicit DynamicComponent(const std::function<bool(Entity)>& containsImpl, const std::function<void(Entity)>& removeImpl) {
+        this->removeImpl = removeImpl;
+        this->containsImpl = containsImpl;
+    }
+};
+
 inline std::uint32_t reserveEntityId() {
     static std::uint32_t id = 0;
     constexpr auto max = std::numeric_limits<std::uint32_t>::max();
@@ -98,12 +128,21 @@ inline std::uint32_t reserveEntityId() {
     return id++;
 }
 
+namespace ECS_Internal {
+    std::vector<DynamicComponent>* getComponentsFromStorage(EntityStorage* store, Entity e);
+}
+
 class EntityBuilder {
     Entity e = { .id = reserveEntityId()};
+    EntityStorage* storage;
+
 public:
     template <typename T>
         requires std::derived_from<T, Component<T>>
     EntityBuilder& addComponent(T&& comp) {
+        auto dyn = ECS_Internal::getComponentsFromStorage(storage, e);
+        dyn->push_back(DynamicComponent::of(comp));
+
         comp.getComponentStorage()->add(e, std::move(comp));
         return *this;
     }
@@ -114,7 +153,9 @@ public:
 
     friend EntityStorage;
 private:
-    EntityBuilder() = default;
+    explicit EntityBuilder(EntityStorage* storage) {
+        this->storage = storage;
+    }
 };
 
 namespace ECS {
@@ -141,8 +182,6 @@ namespace ECS {
     }
 }
 
-// todo, entity manager (entity -> get all components, remove entities, etc)
-
 class Schedule {
     using Callback = std::function<void()>;
 
@@ -165,13 +204,45 @@ public:
 };
 
 class EntityStorage {
-    std::vector<Entity> entities;
+    std::unordered_map<Entity, std::vector<DynamicComponent>> entities;
 public:
     EntityBuilder makeEntity() {
-        const auto builder = EntityBuilder();
-        entities.push_back(builder.getEntity());
+        const auto builder = EntityBuilder(this);
+        const auto entity = builder.getEntity();
+
+        entities[entity] = {};
         return builder;
     }
+
+    [[nodiscard]] std::size_t size() const {
+        return entities.size();
+    }
+
+    [[nodiscard]] std::vector<DynamicComponent>* getComponents(const Entity e) {
+        if (!entities.contains(e)) {
+            Logging::logWarn("attempt to get components of non-existent entity. id=%zu", e.id);
+            return nullptr;
+        }
+
+        return &entities.at(e);
+    }
+
+    void destroyEntity(const Entity e) {
+        if (!entities.contains(e)) {
+            Logging::logWarn("attempted to destroy non-existent entity! id=%zu", e.id);
+            return;
+        }
+
+        for (const auto comps = getComponents(e); auto& c : *comps) {
+            c.remove(e);
+        }
+
+        entities.erase(e);
+    }
 };
+
+inline std::vector<DynamicComponent>* ECS_Internal::getComponentsFromStorage(EntityStorage* store, const Entity e) {
+    return store->getComponents(e);
+}
 
 #endif //GAME_ECS_H
