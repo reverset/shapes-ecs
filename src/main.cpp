@@ -14,12 +14,12 @@
 #include "ecs.h"
 #include "iter.h"
 
-class CameraController : public GameObject {
+class CameraControllerScript : public GameObject {
     Camera2D* camera = nullptr;
 public:
     float zoom = 1.0f;
 
-    CameraController() {
+    CameraControllerScript() {
         name = "CameraController";
         processLayer = UINT32_MAX;
     }
@@ -35,7 +35,7 @@ public:
 
 };
 
-class WeaponHUD : public UIObject {
+class WeaponHUDScript : public UIObject {
     void doDraw() override {
         DrawRectangleRounded(Rectangle{
                                  static_cast<float>(Universe::getResolutionX()) - 100.0f,
@@ -44,7 +44,7 @@ class WeaponHUD : public UIObject {
     }
 };
 
-class Player : public GameObject {
+class PlayerScript : public GameObject {
     static constexpr int DIM = 50;
     static constexpr int SPEED = 100;
 
@@ -57,11 +57,11 @@ class Player : public GameObject {
 
     CPUParticleEmitter* slashEffect = nullptr;
 
-    CameraController* cameraController = nullptr;
+    CameraControllerScript* cameraController = nullptr;
 
 
 public:
-    Player() {
+    PlayerScript() {
         name = "Player";
     }
 
@@ -72,7 +72,7 @@ public:
         slashEffect = Universe::instantiate(ParticlePresets::pop(5, 0.5, slashEffectTexture, 1.0f));
         slashEffect->setEnabled(false);
 
-        cameraController = Universe::findByName<CameraController>("CameraController");
+        cameraController = Universe::findByName<CameraControllerScript>("CameraController");
         cameraController->zoom = 3.0f;
     }
 
@@ -109,6 +109,22 @@ public:
     }
 };
 
+struct Player : Component<Player> {
+    COMPONENT_STORAGE(Player);
+
+    TextureResource* tex;
+
+    explicit Player(TextureResource* tex) {
+        this->tex = tex;
+    }
+};
+
+struct Transform2d : Component<Transform2d> {
+    COMPONENT_STORAGE(Transform2d);
+
+    Vec2 position = {0, 0};
+};
+
 void defineKeybindings();
 
 class TestComp : public Component<TestComp> {
@@ -127,17 +143,58 @@ public:
 
 };
 
+void playerMovement(const Entity, const Player&, Transform2d& trans) {
+    const Vec2 movDelta = Universe::getInputManager()->testVec2Bind(KeyboardAndMouse, "movement");
+
+    static constexpr int SPEED = 100;
+    trans.position += movDelta * (Universe::getScaledDeltaTime() * SPEED);
+}
+
+// TODO, generic sprite component and stuff
+void renderPlayer(const Entity, const Player& player, const Transform2d& trans) {
+    player.tex->render(trans.position, 0.0f, 1.0f, WHITE);
+}
+
 int main() {
-    EntityBuilder()
-        .addComponent(NameTag("test"));
+    // auto es = EntityStorage();
+    //
+    // es.makeEntity()
+    //     .addComponent(NameTag("test"));
+    //
+    // es.makeEntity()
+    //     .addComponent(TestComp())
+    //     .addComponent(NameTag("other"));
+    //
+    // ECS::query<NameTag, TestComp>([](const Entity e, const NameTag& c, const TestComp& test) {
+    //     Logging::log("id=%d, name: %s, test=%d", e.id, c.name.c_str(), test.someData);
+    // });
 
-    EntityBuilder()
-        .addComponent(TestComp())
-        .addComponent(NameTag("other"));
+    Universe::init(640, 360, "Game", [] {
+        const auto man = Universe::getResourceManager();
 
-    ECS::query<NameTag, TestComp>([](const Entity e, const NameTag& c, const TestComp& test) {
-        Logging::log("id=%d, name: %s, test=%d", e.id, c.name.c_str(), test.someData);
-    });
+        man->registerResource(
+            "floorTile",
+            new TextureResource("floorTile.png"));
+
+        man->registerResource(
+            "player",
+            new TextureResource("player.png"));
+
+        man->registerResource(
+            "spark",
+            new TextureResource("spark.png"));
+
+        defineKeybindings();
+
+        Universe::getCamera()->zoom = 3.0f;
+
+        Universe::onUpdate.registerSystem<Player, Transform2d>(playerMovement);
+        Universe::onRender2d.registerSystem<Player, Transform2d>(renderPlayer);
+
+        Universe::getEntityStorage().makeEntity()
+            .addComponent(Player(*man->getResource<TextureResource>("player")))
+            .addComponent(Transform2d());
+    }, [] {});
 
     // Universe::init(640, 360, "Game", [] {
     //     const auto man = Universe::getResourceManager();
@@ -156,15 +213,16 @@ int main() {
     //
     //     defineKeybindings();
     //
-    //     Universe::instantiate(new CameraController());
-    //     Universe::instantiate(new Player());
+    //     Universe::instantiate(new CameraControllerScript());
+    //     Universe::instantiate(new PlayerScript());
     //
-    //     Universe::addUiElement(std::move(std::make_unique<WeaponHUD>()));
-    // }, [] {
-    // });
+    //     Universe::addUiElement(std::move(std::make_unique<WeaponHUDScript>()));
+    // }, [] {});
 
     return 0;
 }
+
+
 
 void defineKeybindings() {
     // Universe::getInputManager()->bindBoolean("moveUp", BooleanGamepadBinding { // testing

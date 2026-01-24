@@ -18,6 +18,8 @@ namespace Universe {
     inline Schedule onRender2d;
     inline Schedule onRenderUi;
 
+    EntityStorage& getEntityStorage();
+
     ResourceManager* getResourceManager();
     Input* getInputManager();
 

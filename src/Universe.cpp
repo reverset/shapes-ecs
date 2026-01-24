@@ -1,10 +1,8 @@
 #include "Universe.h"
 
 #include <iostream>
-#include <string>
 #include <vector>
 #include <functional>
-#include <algorithm>
 
 #include "GameObject.h"
 #include "raylib.h"
@@ -15,9 +13,17 @@
 #include "ecs.h"
 
 namespace Universe {
+    // TODO remove
     std::vector<GameObject*> gameObjects; // unique pointers?
-    std::vector<std::function<void()>> deferredActions;
     std::vector<std::unique_ptr<UIObject>> uiObjects;
+
+    std::vector<std::function<void()>> deferredActions;
+
+    EntityStorage entityStorage;
+
+    EntityStorage& getEntityStorage() {
+        return entityStorage;
+    }
 
     Input input;
 
@@ -63,6 +69,8 @@ namespace Universe {
     }
 
     void paintUi() {
+        onRenderUi.tick();
+        // TODO remove
         for (auto& obj : uiObjects) {
             auto* ptr = obj.get();
             ptr->draw();
@@ -74,6 +82,9 @@ namespace Universe {
         ClearBackground(DARKGRAY);
         BeginMode2D(camera);
 
+        onRender2d.tick();
+
+        // TODO remove
         for (const auto go : gameObjects) {
             go->render2d();
         }
@@ -87,6 +98,9 @@ namespace Universe {
     }
 
     void updateAll() {
+        onUpdate.tick();
+
+        // TODO remove
         for (const auto game_object : gameObjects) {
             game_object->update();
         }

@@ -12,6 +12,8 @@
 
 #define COMPONENT_STORAGE(type) static ComponentStorage<type>& getStoreStatically() { static ComponentStorage<type> store; return store; } ComponentStorage<type>* getComponentStorage() override { return &getStoreStatically(); }
 
+class EntityStorage;
+
 struct Entity {
     std::uint32_t id;
 
@@ -109,16 +111,13 @@ public:
     [[nodiscard]] Entity getEntity() const {
         return e;
     }
+
+    friend EntityStorage;
+private:
+    EntityBuilder() = default;
 };
 
 namespace ECS {
-    template <typename First, typename... Rest, typename Func>
-    std::function<void()> createCallableSystem(Func&& f) {
-        return [&] {
-            query<First, Rest..., Func>(f);
-        };
-    }
-
     template <typename First, typename... Rest, typename Func>
     void query(Func&& f) { // absolute magic
         ComponentStorage<First>& firstStore = First::getStoreStatically();
@@ -133,6 +132,13 @@ namespace ECS {
             }
         }
     }
+
+    template <typename First, typename... Rest, typename Func>
+    std::function<void()> createCallableSystem(Func&& f) {
+        return [&] {
+            ECS::query<First, Rest...>(f);
+        };
+    }
 }
 
 // todo, entity manager (entity -> get all components, remove entities, etc)
@@ -145,7 +151,7 @@ public:
 
     template <typename First, typename... Rest, typename Func>
     Schedule& registerSystem(Func&& f) {
-        const auto sys = ECS::createCallableSystem<First, Rest..., Func>(f);
+        const auto sys = ECS::createCallableSystem<First, Rest...>(f);
         callbacks.push_back(sys);
 
         return *this;
@@ -158,5 +164,14 @@ public:
     }
 };
 
+class EntityStorage {
+    std::vector<Entity> entities;
+public:
+    EntityBuilder makeEntity() {
+        const auto builder = EntityBuilder();
+        entities.push_back(builder.getEntity());
+        return builder;
+    }
+};
 
 #endif //GAME_ECS_H
