@@ -6,9 +6,9 @@
 #include <stdexcept>
 
 #include "GameObject.h"
-#include "vec.h"
-#include "util.h"
-#include "timer.h"
+#include "../vec.h"
+#include "../util.h"
+#include "../timer.h"
 
 // TODO: variable lifetime (random), self-destruction of particle emitter. (perhaps change architecture to an ECS?)
 

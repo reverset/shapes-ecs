@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <chrono>
-#include "util.h"
+#include "../util.h"
 
 namespace Logging {
     inline bool loggingEnabled = true;

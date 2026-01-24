@@ -6,11 +6,11 @@
 
 #include "GameObject.h"
 #include "raylib.h"
-#include "timer.h"
-#include "Universe.h"
-#include "resource.h"
-#include "UIObject.h"
-#include "ParticleSystem.h"
+#include "../timer.h"
+#include "../Universe.h"
+#include "../resource.h"
+#include "../UIObject.h"
+#include "../ParticleSystem.h"
 #include "ecs.h"
 #include "iter.h"
 

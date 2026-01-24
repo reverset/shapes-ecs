@@ -5,11 +5,11 @@
 
 #include <functional>
 
-#include "util.h"
+#include "../util.h"
 #include "GameObject.h"
 #include "resource.h"
 #include "UIObject.h"
-#include "vec.h"
+#include "../vec.h"
 #include "inputsys.h"
 
 namespace Universe {

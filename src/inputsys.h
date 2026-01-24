@@ -8,7 +8,7 @@
 
 #include "raylib.h"
 
-#include "vec.h"
+#include "../vec.h"
 
 enum GamepadId {
     KeyboardAndMouse = 0,

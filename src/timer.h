@@ -4,7 +4,7 @@
 #include "GameObject.h"
 #include <functional>
 
-#include "Universe.h"
+#include "../Universe.h"
 
 class GameTimer : public GameObject {
     std::function<double()> timeFunc;

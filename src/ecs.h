@@ -7,8 +7,8 @@
 #include <functional>
 #include <unordered_map>
 
-#include "iter.h"
-#include "logging.h"
+#include "../iter.h"
+#include "../logging.h"
 
 #define COMPONENT_STORAGE(type) static ComponentStorage<type>& getStoreStatically() { static ComponentStorage<type> store; return store; } ComponentStorage<type>* getComponentStorage() override { return &getStoreStatically(); }
 
