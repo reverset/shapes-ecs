@@ -6,11 +6,11 @@
 
 #include "GameObject.h"
 #include "raylib.h"
-#include "../timer.h"
-#include "../Universe.h"
-#include "../resource.h"
-#include "../UIObject.h"
-#include "../ParticleSystem.h"
+#include "timer.h"
+#include "Universe.h"
+#include "resource.h"
+#include "UIObject.h"
+#include "ParticleSystem.h"
 #include "ecs.h"
 #include "iter.h"
 
@@ -135,7 +135,7 @@ int main() {
         .addComponent(TestComp())
         .addComponent(NameTag("other"));
 
-    ECSManager::query<NameTag, TestComp>([](const Entity e, const NameTag& c, const TestComp& test) {
+    ECS::query<NameTag, TestComp>([](const Entity e, const NameTag& c, const TestComp& test) {
         Logging::log("id=%d, name: %s, test=%d", e.id, c.name.c_str(), test.someData);
     });
 

@@ -7,8 +7,8 @@
 #include <functional>
 #include <unordered_map>
 
-#include "../iter.h"
-#include "../logging.h"
+#include "iter.h"
+#include "logging.h"
 
 #define COMPONENT_STORAGE(type) static ComponentStorage<type>& getStoreStatically() { static ComponentStorage<type> store; return store; } ComponentStorage<type>* getComponentStorage() override { return &getStoreStatically(); }
 
@@ -60,7 +60,7 @@ struct ComponentStorage {
         entities.push_back(e);
     }
 
-    void removeEntity(const Entity e) {
+    void remove(const Entity e) {
         auto i = sparse[e];
         auto last = dense.size() - 1;
 
@@ -111,22 +111,16 @@ public:
     }
 };
 
-class ECSManager {
-public:
-
-    // template <typename Arg1, typename Func>
-    // static void query(Func&& f) {
-    //     ComponentStorage<Arg1>& store = Arg1::getStoreStatically();
-    //
-    //     for (std::size_t i = 0; i < store.size(); ++i) {
-    //         const auto entity = store.entities[i];
-    //         auto& comp = store.dense[i];
-    //         f(entity, comp);
-    //     }
-    // }
+namespace ECS {
+    template <typename First, typename... Rest, typename Func>
+    std::function<void()> createCallableSystem(Func&& f) {
+        return [&] {
+            query<First, Rest..., Func>(f);
+        };
+    }
 
     template <typename First, typename... Rest, typename Func>
-    static void query(Func&& f) { // absolute magic
+    void query(Func&& f) { // absolute magic
         ComponentStorage<First>& firstStore = First::getStoreStatically();
 
         for (std::size_t i = 0; i < firstStore.size(); ++i) {
@@ -139,6 +133,30 @@ public:
             }
         }
     }
+}
+
+// todo, entity manager (entity -> get all components, remove entities, etc)
+
+class Schedule {
+    using Callback = std::function<void()>;
+
+    std::vector<Callback> callbacks;
+public:
+
+    template <typename First, typename... Rest, typename Func>
+    Schedule& registerSystem(Func&& f) {
+        const auto sys = ECS::createCallableSystem<First, Rest..., Func>(f);
+        callbacks.push_back(sys);
+
+        return *this;
+    }
+
+    void tick() const {
+        for (auto& c : callbacks) {
+            c();
+        }
+    }
 };
+
 
 #endif //GAME_ECS_H

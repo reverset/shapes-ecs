@@ -1,4 +1,4 @@
-#include "../Universe.h"
+#include "Universe.h"
 
 #include <iostream>
 #include <string>
@@ -11,6 +11,8 @@
 #include "UIObject.h"
 #include "inputsys.h"
 #include "RandomGen.h"
+
+#include "ecs.h"
 
 namespace Universe {
     std::vector<GameObject*> gameObjects; // unique pointers?

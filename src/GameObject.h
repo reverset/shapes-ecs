@@ -1,7 +1,7 @@
 #ifndef GAME_GAMEOBJECT_H
 #define GAME_GAMEOBJECT_H
 
-#include "../vec.h"
+#include "vec.h"
 #include <string>
 
 class GameObject {

@@ -5,14 +5,19 @@
 
 #include <functional>
 
-#include "../util.h"
+#include "util.h"
 #include "GameObject.h"
 #include "resource.h"
 #include "UIObject.h"
-#include "../vec.h"
+#include "vec.h"
 #include "inputsys.h"
+#include "ecs.h"
 
 namespace Universe {
+    inline Schedule onUpdate;
+    inline Schedule onRender2d;
+    inline Schedule onRenderUi;
+
     ResourceManager* getResourceManager();
     Input* getInputManager();
 
