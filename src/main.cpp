@@ -12,6 +12,7 @@
 #include "components/standardcomponents.h"
 #include "engine-ecs/rendering.h"
 #include "engine-ecs/useful.h"
+#include "engine-ecs/tilemap.h"
 
 struct Weapon {
     Timestamp lastFiredTimestamp{};
@@ -35,7 +36,7 @@ struct WeaponHud : Component<WeaponHud> {
 struct Bullet : Component<Bullet> {
     COMPONENT_STORAGE(Bullet);
 
-    Entity attacker;
+    Entity attacker{};
     std::uint32_t baseDamage;
 
     Bullet() = delete;
@@ -47,11 +48,6 @@ struct Bullet : Component<Bullet> {
 };
 
 void defineKeybindings() {
-    // Universe::getInputManager()->bindBoolean("moveUp", BooleanGamepadBinding { // testing
-    //     .keyboard = []{ return IsKeyPressed(KEY_W); },
-    //     .gamepad = [](const int id){ return IsGamepadButtonPressed(id, GAMEPAD_BUTTON_RIGHT_FACE_DOWN); },
-    // });
-
     const auto input = Universe::getInputManager();
     // TODO, deadzone
     input->bindVector2("movement", Vec2GamepadBinding {
@@ -111,6 +107,44 @@ void playerAttackControl(const Entity e, Player& player, const Transform2d& tran
     }
 }
 
+// TODO, use velocity to move camera 'ahead' of player for better vision.
+void centerCameraOnPlayer(const Entity, const Player&, const Transform2d& trans) {
+    const auto cam = Universe::getCamera();
+    // cam->target = trans.position;
+    cam->target = static_cast<Vec2>(cam->target).lerp(trans.position, Universe::getScaledDeltaTime() * 2.0f);
+}
+
+void rightClickPlaceTile(const Entity, Tilemap& map, const Transform2d& trans) {
+    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+        const auto desired = map.toRelativePosition(trans.position, Universe::getMouseWorldPosition());
+        Logging::log("desired=%s", desired.toString().c_str());
+
+        if (map.isPointInBounds(desired)) {
+            map.insertTile(Tile {
+                .sprite = Sprite(*Universe::getResourceManager()->getResource<TextureResource>("grassTile")),
+                .position = desired,
+            });
+        }
+    }
+}
+
+void loadMap() {
+    const auto man = Universe::getResourceManager();
+    auto& es = Universe::getEntityStorage();
+
+    const auto grassTexture = *man->getResource<TextureResource>("grassTile");
+
+    auto map = Tilemap(10, 10, 16.0f);
+    map.insertTile(Tile {
+        .sprite = Sprite(grassTexture),
+        .position = {0, 0},
+    });
+
+    es.makeEntity()
+        .addComponent(std::move(map))
+        .addComponent(Transform2d());
+}
+
 int main() {
     // TODO update gamepad mapping for linux
 
@@ -133,23 +167,34 @@ int main() {
             "bullet",
             new TextureResource("bullet.png"));
 
+        man->registerResource(
+            "grassTile",
+            new TextureResource("grass.png"));
+
         defineKeybindings();
 
         Universe::getCamera()->zoom = 3.0f;
 
         RenderingSystems::registerAll();
         UsefulSystems::registerAll();
+        TilemapSystems::registerAll();
 
         Universe::onUpdate
             .registerSystem<Player, Transform2d>(playerMovement)
             .registerSystem<Player, Transform2d>(playerAttackControl)
-            .registerSystem<Velocity, Transform2d>(UsefulSystems::applyVelocity);
+            .registerSystem<Velocity, Transform2d>(UsefulSystems::applyVelocity)
+            .registerSystem<Tilemap, Transform2d>(rightClickPlaceTile);
+
+        Universe::onLateUpdate
+            .registerSystem<Player, Transform2d>(centerCameraOnPlayer);
 
         Universe::onRenderUi.registerSystem<WeaponHud, Transform2d>(renderWeaponHud);
 
         const auto playerTexture = *man->getResource<TextureResource>("player");
 
         auto& es = Universe::getEntityStorage();
+
+        loadMap();
 
         es.makeEntity()
             .addComponent(Player())

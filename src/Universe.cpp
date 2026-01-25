@@ -59,7 +59,9 @@ namespace Universe {
         ClearBackground(DARKGRAY);
         BeginMode2D(camera);
 
+        onEarlyRender2d.tick(); // more of a temporary solution.
         onRender2d.tick();
+        onLateRender2d.tick();
 
         EndMode2D();
 
@@ -73,6 +75,7 @@ namespace Universe {
 
     void updateAll() {
         onUpdate.tick();
+        onLateUpdate.tick();
     }
 
     void deInit(const std::function<void()>& stop) {

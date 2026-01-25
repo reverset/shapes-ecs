@@ -25,7 +25,7 @@ namespace GameUtil {
 
     // https://stackoverflow.com/questions/2342162/stdstring-formatting-like-sprintf
     template<typename ... Args>
-    std::string fmt( const std::string& format, Args ... args ) {
+    [[nodiscard]] std::string fmt( const std::string& format, Args ... args ) {
         int size_s = std::snprintf( nullptr, 0, format.c_str(), args ... ) + 1; // Extra space for '\0'
         if( size_s <= 0 ){ throw std::runtime_error( "Error during formatting." ); }
         auto size = static_cast<size_t>( size_s );
@@ -36,14 +36,19 @@ namespace GameUtil {
 
 
     template <typename T>
-    T clamp(T val, T min, T max) {
+    [[nodiscard]] T clamp(T val, T min, T max) {
         return std::min(std::max(val, min), max);
     }
 
     template <typename T>
-    T moveTowards(T val, T target, T delta) {
+    [[nodiscard]] T moveTowards(T val, T target, T delta) {
         T actualDelta = std::min(delta, std::abs(target - val));
         return val + std::copysign(actualDelta, target - val);
+    }
+
+    template <typename T>
+    [[nodiscard]] T lerp(T val, T target, T delta) {
+        return val + (target - val) * delta;
     }
 }
 

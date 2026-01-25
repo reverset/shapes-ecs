@@ -66,7 +66,7 @@ public:
     }
 
     void render(const Vec2 pos, const float rotation, const float scale, const Color& tint) {
-        renderEx(pos, VEC2_ZERO, rotation, scale, tint);
+        renderEx(pos, Vec2::zero(), rotation, scale, tint);
     }
 
     void renderEx(const Vec2 pos, const Vec2 offset, const float rotation, const float scale, const Color& tint) {

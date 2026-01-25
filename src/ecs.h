@@ -227,6 +227,9 @@ public:
 class EntityStorage {
     std::unordered_map<Entity, std::vector<DynamicComponent>> entities;
 public:
+    EntityStorage(const EntityStorage& other) = delete;
+    EntityStorage() = default;
+
     EntityBuilder makeEntity() {
         const auto builder = EntityBuilder(this);
         const auto entity = builder.getEntity();

@@ -33,6 +33,7 @@ add_executable(game
         src/components/standardcomponents.h
         src/engine-ecs/rendering.h
         src/engine-ecs/useful.h
+        src/engine-ecs/tilemap.h
 )
 
 target_link_libraries(game PRIVATE raylib)

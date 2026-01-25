@@ -8,8 +8,28 @@
 #include "RandomGen.h"
 #include "util.h"
 
+struct Vec2ui {
+    std::uint32_t x, y;
+
+    [[nodiscard]] static Vec2ui zero() {
+        return {0, 0};
+    }
+
+    bool operator==(const Vec2ui& other) const {
+        return x == other.x && y == other.y;
+    }
+
+    [[nodiscard]] std::string toString() const {
+        return GameUtil::fmt("Vec2ui(x=%zu, y=%zu)", x, y);
+    }
+};
+
 struct Vec2 {
     float x, y;
+
+    [[nodiscard]] static Vec2 zero() {
+        return {0, 0};
+    }
 
     static Vec2 fromAngle(const float angle, const float magnitude) {
         const float x = std::cos(angle);
@@ -109,6 +129,13 @@ struct Vec2 {
         return fromAngle(angle, GameUtil::moveTowards(mag, target, delta));
     }
 
+    [[nodiscard]] Vec2 lerp(const Vec2 target, const float delta) const {
+        return {
+            GameUtil::lerp(x, target.x, delta),
+            GameUtil::lerp(y, target.y, delta),
+        };
+    }
+
     operator Vector2() const {
         return toRaylibVector2();
     }
@@ -121,9 +148,6 @@ struct Vec2 {
         return GameUtil::fmt("Vec2(x=%f, y=%f)", x, y);
     }
 };
-
-
-const Vec2 VEC2_ZERO = {0, 0};
 
 struct PercentVec2 { // todo: corner and more (maybe wont use this)
     float px, py;
