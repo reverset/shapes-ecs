@@ -13,10 +13,6 @@
 #include "ecs.h"
 
 namespace Universe {
-    // TODO remove
-    std::vector<GameObject*> gameObjects; // unique pointers?
-    std::vector<std::unique_ptr<UIObject>> uiObjects;
-
     std::vector<std::function<void()>> deferredActions;
 
     EntityStorage entityStorage;
@@ -44,14 +40,6 @@ namespace Universe {
     double timeScale = 1.0;
     ResourceManager* resourceManager;
 
-    std::vector<GameObject*>* getGameObjects() {
-        return &gameObjects;
-    }
-
-    std::vector<std::unique_ptr<UIObject>>* getUIObjects() {
-        return &uiObjects;
-    }
-
     Input *getInputManager() {
         return &input;
     }
@@ -68,15 +56,6 @@ namespace Universe {
         }
     }
 
-    void paintUi() {
-        onRenderUi.tick();
-        // TODO remove
-        for (auto& obj : uiObjects) {
-            auto* ptr = obj.get();
-            ptr->draw();
-        }
-    }
-
     void renderAll() {
         BeginDrawing();
         ClearBackground(DARKGRAY);
@@ -84,14 +63,9 @@ namespace Universe {
 
         onRender2d.tick();
 
-        // TODO remove
-        for (const auto go : gameObjects) {
-            go->render2d();
-        }
-
         EndMode2D();
 
-        paintUi();
+        onRenderUi.tick();
 
         DrawFPS(15, 15);
         EndDrawing();
@@ -99,18 +73,10 @@ namespace Universe {
 
     void updateAll() {
         onUpdate.tick();
-
-        // TODO remove
-        for (const auto game_object : gameObjects) {
-            game_object->update();
-        }
     }
 
     void deInit(const std::function<void()>& stop) {
         std::cout << "Shutting down ..." << std::endl;
-        for (const auto object : gameObjects) {
-            delete object;
-        }
         delete resourceManager;
 
         stop();

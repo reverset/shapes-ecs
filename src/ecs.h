@@ -92,9 +92,16 @@ public:
 };
 
 class DynamicComponent {
+    void* store;
+
     std::function<void(Entity)> removeImpl;
     std::function<bool(Entity)> containsImpl;
 public:
+    template <typename T>
+    bool compareStorePtr(T* other) {
+        return store == other;
+    }
+
     [[nodiscard]] bool contains(const Entity e) const {
         return containsImpl(e);
     }
@@ -106,10 +113,12 @@ public:
     template <typename T>
     static DynamicComponent of(Component<T>& comp) {
         const auto store = comp.getComponentStorage();
-        return DynamicComponent([store](Entity e) { return store->contains(e); }, [store](Entity e) { return store->remove(e); });
+
+        return DynamicComponent(static_cast<void *>(store), [store](Entity e) { return store->contains(e); }, [store](Entity e) { return store->remove(e); });
     }
 
-    explicit DynamicComponent(const std::function<bool(Entity)>& containsImpl, const std::function<void(Entity)>& removeImpl) {
+    explicit DynamicComponent(void* store, const std::function<bool(Entity)>& containsImpl, const std::function<void(Entity)>& removeImpl) {
+        this->store = store;
         this->removeImpl = removeImpl;
         this->containsImpl = containsImpl;
     }
@@ -180,6 +189,13 @@ namespace ECS {
             ECS::query<First, Rest...>(f);
         };
     }
+
+    template <typename ... Funcs>
+    std::function<void()> chain(Funcs&&... f) {
+        return [f...] {
+              (f(), ...);
+        };
+    }
 }
 
 class Schedule {
@@ -193,6 +209,11 @@ public:
         const auto sys = ECS::createCallableSystem<First, Rest...>(f);
         callbacks.push_back(sys);
 
+        return *this;
+    }
+
+    Schedule& registerCallable(const Callback& f) {
+        callbacks.push_back(f);
         return *this;
     }
 
@@ -238,6 +259,21 @@ public:
         }
 
         entities.erase(e);
+    }
+
+    template <typename T>
+    void removeComponent(const Entity e) {
+        ComponentStorage<T>& store = T::getStoreStatically();
+        store.remove(e);
+
+        const auto comps = getComponents(e);
+        for (auto i = comps->begin(); i != comps->end(); ++i) {
+            if (i->compareStorePtr(&store)) {
+                comps->erase(i);
+                return;
+            }
+        }
+        Logging::logWarn("dynamic component was not removed from entity storage. id=%zu", e.id);
     }
 };
 

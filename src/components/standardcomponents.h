@@ -10,6 +10,12 @@ struct Transform2d : Component<Transform2d> {
     Vec2 position = {0, 0};
     float rotation = 0.0f;
     float scale = 1.0f;
+
+    explicit Transform2d() = default;
+
+    explicit Transform2d(const Vec2& position) {
+        this->position = position;
+    }
 };
 
 struct Sprite : Component<Sprite> {

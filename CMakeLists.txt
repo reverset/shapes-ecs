@@ -34,6 +34,7 @@ add_executable(game
         src/iter.h
         src/components/standardcomponents.h
         src/engine-ecs/rendering.h
+        src/engine-ecs/useful.h
 )
 
 target_link_libraries(game PRIVATE raylib)

@@ -6,6 +6,28 @@
 
 #include "Universe.h"
 
+struct Duration {
+    std::uint64_t millis;
+
+    static Duration ofSeconds(const double seconds) {
+        return Duration(static_cast<std::uint64_t>(seconds * 1000));
+    }
+
+    [[nodiscard]] double toSeconds() const {
+        return static_cast<double>(millis) / 1000.0;
+    }
+
+    [[nodiscard]] std::uint64_t toMillis() const {
+        return millis;
+    }
+
+    explicit Duration() = default;
+
+    explicit Duration(const std::uint64_t millis) {
+        this->millis = millis;
+    }
+};
+
 class GameTimer : public GameObject {
     std::function<double()> timeFunc;
     double startTime = -1;

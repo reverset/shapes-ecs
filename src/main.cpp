@@ -9,109 +9,19 @@
 #include "timer.h"
 #include "Universe.h"
 #include "resource.h"
-#include "UIObject.h"
 #include "ParticleSystem.h"
 #include "ecs.h"
+
 #include "components/standardcomponents.h"
 #include "engine-ecs/rendering.h"
-
-class CameraControllerScript : public GameObject {
-    Camera2D* camera = nullptr;
-public:
-    float zoom = 1.0f;
-
-    CameraControllerScript() {
-        name = "CameraController";
-        processLayer = UINT32_MAX;
-    }
-
-    void ready() override {
-        camera = Universe::getCamera();
-    }
-
-    void update() override { // maybe replace with just setters & getters
-        camera->target = position;
-        camera->zoom = zoom;
-    }
-
-};
-
-class WeaponHUDScript : public UIObject {
-    void doDraw() override {
-        DrawRectangleRounded(Rectangle{
-                                 static_cast<float>(Universe::getResolutionX()) - 100.0f,
-                                 static_cast<float>(Universe::getResolutionY()) - 100.0f, 50, 50
-                             }, 0.5f, 8, RED);
-    }
-};
-
-class PlayerScript : public GameObject {
-    static constexpr int DIM = 50;
-    static constexpr int SPEED = 100;
-
-    Vec2 slashDir = {0, 0};
-
-    GameTimer slashTimer = GameTimer::ofGameTime();
-
-    TextureResource* tex = nullptr;
-    TextureResource* slashEffectTexture = nullptr;
-
-    CPUParticleEmitter* slashEffect = nullptr;
-
-    CameraControllerScript* cameraController = nullptr;
-
-
-public:
-    PlayerScript() {
-        name = "Player";
-    }
-
-    void ready() override {
-        tex = *Universe::getResourceManager()->getResource<TextureResource>("player");
-        slashEffectTexture = *Universe::getResourceManager()->getResource<TextureResource>("spark");
-
-        slashEffect = Universe::instantiate(ParticlePresets::pop(5, 0.5, slashEffectTexture, 1.0f));
-        slashEffect->setEnabled(false);
-
-        cameraController = Universe::findByName<CameraControllerScript>("CameraController");
-        cameraController->zoom = 3.0f;
-    }
-
-    void update() override {
-        if (slashTimer.hasElapsed(0.1)) {
-            slashTimer.stop();
-            slashEffect->setEnabled(false); // improve
-        }
-
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !slashTimer.isRunning()) {
-            const auto mpos = Universe::getMouseWorldPosition();
-
-            slashDir = (mpos - position).normalizeOrZero();
-            const auto desiredPos = position + slashDir * 50;
-
-            slashEffect->position = desiredPos;
-            slashEffect->setEnabled(true);
-
-            slashTimer.reset();
-        }
-
-        const Vec2 movDelta = Universe::getInputManager()->testVec2Bind(KeyboardAndMouse, "movement");
-
-        position += movDelta * (Universe::getScaledDeltaTime() * SPEED);
-    }
-
-    void render2d() override {
-        tex->render(position, 0.0, 1.0f, WHITE);
-
-        if (slashTimer.isRunning()) {
-            const auto desiredPos = position + slashDir * 50;
-            DrawCircle(desiredPos.xInt(), desiredPos.yInt(), 10, BLUE);
-        }
-    }
-};
+#include "engine-ecs/useful.h"
 
 struct Player : Component<Player> {
     COMPONENT_STORAGE(Player);
+};
+
+struct WeaponHud : Component<WeaponHud> {
+    COMPONENT_STORAGE(WeaponHud);
 };
 
 void defineKeybindings() {
@@ -127,20 +37,23 @@ void defineKeybindings() {
     });
 }
 
-void playerMovement(const Entity e, const Player&, Transform2d& trans) {
+void renderWeaponHud(const Entity, const WeaponHud&, const Transform2d& trans) {
+    DrawRectangleRounded(Rectangle{
+                         static_cast<float>(Universe::getResolutionX()) - trans.position.x,
+                         static_cast<float>(Universe::getResolutionY()) - trans.position.y, 50 * trans.scale, 50 * trans.scale
+                     }, 0.5f, 8, RED);
+}
+
+void playerMovement(const Entity, const Player&, Transform2d& trans) {
     const Vec2 movDelta = Universe::getInputManager()->testVec2Bind(KeyboardAndMouse, "movement");
 
     static constexpr int SPEED = 100;
     trans.position += movDelta * (Universe::getScaledDeltaTime() * SPEED);
-
-    if (IsKeyPressed(KEY_J)) {
-        Universe::defer([e] {
-            Universe::getEntityStorage().destroyEntity(e);
-        });
-    }
 }
 
 int main() {
+    // TODO update gamepad mapping for linux
+
     Universe::init(640, 360, "Game", [] {
         const auto man = Universe::getResourceManager();
 
@@ -161,15 +74,25 @@ int main() {
         Universe::getCamera()->zoom = 3.0f;
 
         RenderingSystems::registerAll();
+        UsefulSystems::registerAll();
 
         Universe::onUpdate.registerSystem<Player, Transform2d>(playerMovement);
 
+        Universe::onRenderUi.registerSystem<WeaponHud, Transform2d>(renderWeaponHud);
+
         const auto playerTexture = *man->getResource<TextureResource>("player");
 
-        Universe::getEntityStorage().makeEntity()
+        auto& es = Universe::getEntityStorage();
+
+        es.makeEntity()
             .addComponent(Player())
             .addComponent(Sprite(playerTexture))
             .addComponent(Transform2d());
+
+        es.makeEntity()
+            .addComponent(WeaponHud())
+            .addComponent(Transform2d({100, 100}));
+
     }, [] {});
 
     // Universe::init(640, 360, "Game", [] {
