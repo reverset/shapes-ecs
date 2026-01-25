@@ -117,7 +117,6 @@ void centerCameraOnPlayer(const Entity, const Player&, const Transform2d& trans)
 void rightClickPlaceTile(const Entity, Tilemap& map, const Transform2d& trans) {
     if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
         const auto desired = map.toRelativePosition(trans.position, Universe::getMouseWorldPosition());
-        Logging::log("desired=%s", desired.toString().c_str());
 
         if (map.isPointInBounds(desired)) {
             map.insertTile(Tile {

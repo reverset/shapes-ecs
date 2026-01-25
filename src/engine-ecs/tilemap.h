@@ -2,6 +2,7 @@
 #define GAME_TILEMAP_H
 
 #include "vector"
+#include "raylib.h"
 
 #include "../ecs.h"
 #include "../engine-ecs/rendering.h"
@@ -20,22 +21,33 @@ struct Tile {
     Vec2ui position{0, 0};
 };
 
-// single tilemap entity? Or just spawn each tile as an entity?
 class Tilemap : public Component<Tilemap> {
-    std::unordered_map<Vec2ui, std::vector<Tile>, SpatialHash> tiles;
+
+    // todo layers, and collision
+    using TileHashMap = std::unordered_map<Vec2ui, std::vector<Tile>, SpatialHash>;
+
+    TileHashMap tiles;
     std::uint32_t width;
     std::uint32_t height;
+
 
     float scalingFactor;
     float inverseScalingFactor;
 public:
     COMPONENT_STORAGE(Tilemap);
 
+    std::uint32_t xHashFactor = 16;
+    std::uint32_t yHashFactor = 16;
+
     explicit Tilemap(const std::uint32_t width, const std::uint32_t height, const float scalingFactor) {
         this->width = width;
         this->height = height;
         this->scalingFactor = scalingFactor;
         this->inverseScalingFactor = 1.0f / scalingFactor;
+    }
+
+    [[nodiscard]] const TileHashMap& getInternalMap() const {
+        return tiles;
     }
 
     template <typename Func>
@@ -67,8 +79,8 @@ public:
     }
 
     void insertTile(const Tile& tile) {
-        const auto ix = tile.position.x / this->width;
-        const auto iy = tile.position.y / this->height;
+        const auto ix = tile.position.x / xHashFactor;
+        const auto iy = tile.position.y / yHashFactor;
 
         const Vec2ui vec{ix, iy};
         tiles[vec].push_back(tile);
@@ -83,6 +95,7 @@ namespace TilemapSystems {
             tile.sprite.texture->renderEx(pos, tile.sprite.offset, 0.0f, 1.0f, tile.sprite.tint);
         });
     }
+
 
     inline void registerAll() {
         Universe::onEarlyRender2d.registerSystem<Tilemap, Transform2d>(renderTilemaps);
