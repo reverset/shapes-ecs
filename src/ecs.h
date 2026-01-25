@@ -235,6 +235,10 @@ public:
         return builder;
     }
 
+    [[nodiscard]] bool isValid(const Entity e) const {
+        return entities.contains(e);
+    }
+
     [[nodiscard]] std::size_t size() const {
         return entities.size();
     }

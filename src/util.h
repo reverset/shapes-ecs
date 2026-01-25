@@ -15,17 +15,17 @@ namespace GameUtil {
     void insertSorted(std::vector<T>* list, T&& item, const std::function<int(const T&, const T&)>& comparator) {
         for (size_t i = 0; i < list->size(); i++) {
             if (comparator(list->at(i), item) >= 0) {
-                list->insert(list->begin() + i, std::move(item));
+                list->insert(list->begin() + i, std::forward<T>(item));
                 return;
             }
         }
-        list->push_back(std::move(item));
+        list->push_back(std::forward<T>(item));
     }
 
 
     // https://stackoverflow.com/questions/2342162/stdstring-formatting-like-sprintf
     template<typename ... Args>
-    std::string string_format( const std::string& format, Args ... args ) {
+    std::string fmt( const std::string& format, Args ... args ) {
         int size_s = std::snprintf( nullptr, 0, format.c_str(), args ... ) + 1; // Extra space for '\0'
         if( size_s <= 0 ){ throw std::runtime_error( "Error during formatting." ); }
         auto size = static_cast<size_t>( size_s );

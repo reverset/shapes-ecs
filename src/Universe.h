@@ -6,12 +6,11 @@
 #include <functional>
 
 #include "util.h"
-#include "GameObject.h"
 #include "resource.h"
-#include "UIObject.h"
 #include "vec.h"
 #include "inputsys.h"
 #include "ecs.h"
+#include "timer.h"
 
 namespace Universe {
     inline Schedule onUpdate;
@@ -57,5 +56,17 @@ namespace Universe {
     float getScaledDeltaTime();
 
 } // Universe
+
+struct Timestamp {
+    double start;
+
+    Timestamp() {
+        start = Universe::getGameTime();
+    }
+
+    [[nodiscard]] bool hasElasped(const Duration dur) const {
+        return Universe::getGameTime() > start + dur.toSeconds();
+    }
+};
 
 #endif //GAME_UNIVERSE_H

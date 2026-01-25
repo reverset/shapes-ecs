@@ -18,13 +18,11 @@ add_executable(game
         src/main.cpp
         src/Universe.cpp
         src/Universe.h
-        src/GameObject.h
         src/vec.h
         src/timer.h
         src/Files.h
         src/resource.h
         src/util.h
-        src/UIObject.h
         src/inputsys.h
         src/ParticleSystem.h
         src/RandomGen.cpp

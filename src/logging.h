@@ -13,7 +13,7 @@ namespace Logging {
         if (!loggingEnabled) return;
         const auto now = std::chrono::system_clock::now();
 
-        std::cout << '[' << now << "] [INFO] " << GameUtil::string_format(format, args...) << std::endl;
+        std::cout << '[' << now << "] [INFO] " << GameUtil::fmt(format, args...) << std::endl;
     }
 
     template <typename ... Args>
@@ -21,7 +21,7 @@ namespace Logging {
         if (!loggingEnabled) return;
         const auto now = std::chrono::system_clock::now();
 
-        std::cerr << '[' << now << "] [WARN] " << GameUtil::string_format(format, args...) << std::endl;
+        std::cerr << '[' << now << "] [WARN] " << GameUtil::fmt(format, args...) << std::endl;
     }
 }
 

@@ -11,6 +11,7 @@
 
 #include "Files.h"
 #include "raylib.h"
+#include "vec.h"
 
 class Resource {
 protected:
@@ -81,7 +82,7 @@ public:
             {offset.x, offset.y, w, h},
             {pos.x, pos.y, sw, sh},
             {sw/2.0f, sh/2.0f},
-            rotation,
+            rotation * RAD2DEG,
             tint);
     }
 };

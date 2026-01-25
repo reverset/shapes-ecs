@@ -59,6 +59,14 @@ struct Vec2 {
         return {x * b, y * b};
     }
 
+    Vec2 operator*(const double b) const {
+        return {x * static_cast<float>(b), y * static_cast<float>(b)};
+    }
+
+    Vec2 operator*(const int b) const {
+        return {x * static_cast<float>(b), y * static_cast<float>(b)};
+    }
+
     Vec2 operator*(const Vec2& b) const {
         return {x * b.x, y * b.y};
     }
@@ -110,7 +118,7 @@ struct Vec2 {
     }
 
     [[nodiscard]] std::string toString() const {
-        return GameUtil::string_format("Vec2(x=%f, y=%f)", x, y);
+        return GameUtil::fmt("Vec2(x=%f, y=%f)", x, y);
     }
 };
 

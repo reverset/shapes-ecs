@@ -13,8 +13,14 @@ struct Transform2d : Component<Transform2d> {
 
     explicit Transform2d() = default;
 
-    explicit Transform2d(const Vec2& position) {
+    explicit Transform2d(const Vec2& position) : Transform2d(position, 0.0f) {}
+
+    explicit Transform2d(const Vec2& position, const float angle) : Transform2d(position, angle, 1.0f) {}
+
+    explicit Transform2d(const Vec2& position, const float angle, const float scale) {
         this->position = position;
+        this->rotation = angle;
+        this->scale = scale;
     }
 };
 

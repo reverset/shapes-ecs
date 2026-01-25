@@ -16,6 +16,17 @@ struct Transient : Component<Transient> {
     }
 };
 
+struct Velocity : Component<Velocity> {
+    COMPONENT_STORAGE(Velocity);
+
+    Vec2 velocity = {0, 0};
+    float angularVelocity = 0.0f;
+
+    explicit Velocity(const Vec2 linearVel) {
+        this->velocity = linearVel;
+    }
+};
+
 namespace UsefulSystems {
     inline void removeTransient(const Entity e, const Transient& transient) {
         const auto time = Universe::getGameTime();
@@ -25,6 +36,12 @@ namespace UsefulSystems {
                 Universe::getEntityStorage().destroyEntity(e);
             });
         }
+    }
+
+    // not automatically registered (for finer control of ordering)
+    inline void applyVelocity(const Entity, const Velocity& velocity, Transform2d& trans) {
+        trans.position += velocity.velocity * Universe::getScaledDeltaTime();
+        trans.rotation += velocity.angularVelocity * Universe::getScaledDeltaTime();
     }
 
     inline void registerAll() {

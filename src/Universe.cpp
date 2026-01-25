@@ -4,9 +4,7 @@
 #include <vector>
 #include <functional>
 
-#include "GameObject.h"
 #include "raylib.h"
-#include "UIObject.h"
 #include "inputsys.h"
 #include "RandomGen.h"
 
@@ -68,6 +66,8 @@ namespace Universe {
         onRenderUi.tick();
 
         DrawFPS(15, 15);
+        DrawText(GameUtil::fmt("entities: %d", getEntityStorage().size()).c_str(), 15, 35, 20, WHITE);
+
         EndDrawing();
     }
 
