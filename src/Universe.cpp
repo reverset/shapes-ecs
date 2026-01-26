@@ -67,6 +67,7 @@ namespace Universe {
 
         onRenderUi.tick();
 
+        DrawRectangle(0, 0, 150, 100, Fade(BLACK, 0.8));
         DrawFPS(15, 15);
         DrawText(GameUtil::fmt("entities: %d", getEntityStorage().size()).c_str(), 15, 35, 20, WHITE);
 
@@ -111,6 +112,8 @@ namespace Universe {
         resourceManager = new ResourceManager;
 
         RandomGen::init();
+
+        SetConfigFlags(FLAG_WINDOW_ALWAYS_RUN);
         InitWindow(width, height, title);
 
         start();

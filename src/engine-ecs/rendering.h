@@ -3,8 +3,7 @@
 
 #include "../ecs.h"
 #include "../Universe.h"
-#include "../vec.h"
-#include "../components/standardcomponents.h"
+#include "standardcomponents.h"
 
 namespace RenderingSystems {
     inline void renderSprites(const Entity, const Sprite& sprite, const Transform2d& trans) {

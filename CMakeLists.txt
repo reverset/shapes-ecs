@@ -30,7 +30,7 @@ add_executable(game
         src/ecs.h
         src/logging.h
         src/iter.h
-        src/components/standardcomponents.h
+        src/engine-ecs/standardcomponents.h
         src/engine-ecs/rendering.h
         src/engine-ecs/useful.h
         src/engine-ecs/tilemap.h

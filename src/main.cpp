@@ -9,13 +9,13 @@
 #include "ecs.h"
 #include "timer.h"
 
-#include "components/standardcomponents.h"
+#include "engine-ecs/standardcomponents.h"
 #include "engine-ecs/rendering.h"
 #include "engine-ecs/useful.h"
 #include "engine-ecs/tilemap.h"
 
 struct Weapon {
-    Timestamp lastFiredTimestamp{};
+    Timestamp lastFiredTimestamp = Timestamp::longAgo();
     Duration cooldownTime{};
 
     explicit Weapon(const Duration cooldownTime) {
@@ -95,7 +95,7 @@ void playerAttackControl(const Entity e, Player& player, const Transform2d& tran
     if (weapon.lastFiredTimestamp.hasElasped(weapon.cooldownTime)
         && Universe::getInputManager()->testBooleanBind(KeyboardAndMouse, "shoot")) {
 
-        weapon.lastFiredTimestamp = Timestamp{};
+        weapon.lastFiredTimestamp = Timestamp::now();
 
         const auto mouse = Universe::getMouseWorldPosition();
         const auto direction = (mouse - trans.position).normalizeOrZero();
@@ -118,10 +118,10 @@ void rightClickPlaceTile(const Entity, Tilemap& map, const Transform2d& trans) {
     if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
         const auto desired = map.toRelativePosition(trans.position, Universe::getMouseWorldPosition());
 
-        if (map.isPointInBounds(desired)) {
-            map.insertTile(Tile {
+        if (desired.has_value()) {
+            map.insertTile(0, Tile {
                 .sprite = Sprite(*Universe::getResourceManager()->getResource<TextureResource>("grassTile")),
-                .position = desired,
+                .position = desired.value(),
             });
         }
     }
@@ -133,11 +133,13 @@ void loadMap() {
 
     const auto grassTexture = *man->getResource<TextureResource>("grassTile");
 
-    auto map = Tilemap(10, 10, 16.0f);
-    map.insertTile(Tile {
-        .sprite = Sprite(grassTexture),
-        .position = {0, 0},
-    });
+    auto map = Tilemap(100, 100, 16.0f, 3);
+    // map.insertTile(0, Tile {
+    //     .sprite = Sprite(grassTexture),
+    //     .position = {0, 0},
+    // });
+
+    map.fillTile(0, Sprite(grassTexture), {0, 0}, {100, 100});
 
     es.makeEntity()
         .addComponent(std::move(map))
@@ -173,10 +175,11 @@ int main() {
         defineKeybindings();
 
         Universe::getCamera()->zoom = 3.0f;
+        // Universe::getCamera()->zoom = 0.5f;
 
         RenderingSystems::registerAll();
         UsefulSystems::registerAll();
-        TilemapSystems::registerAll();
+        // TilemapSystems::registerAll();
 
         Universe::onUpdate
             .registerSystem<Player, Transform2d>(playerMovement)
@@ -186,6 +189,9 @@ int main() {
 
         Universe::onLateUpdate
             .registerSystem<Player, Transform2d>(centerCameraOnPlayer);
+
+        Universe::onEarlyRender2d
+            .registerSystem<Tilemap, Transform2d>(TilemapSystems::renderTilemapsChunked);
 
         Universe::onRenderUi.registerSystem<WeaponHud, Transform2d>(renderWeaponHud);
 
@@ -198,12 +204,12 @@ int main() {
         es.makeEntity()
             .addComponent(Player())
             .addComponent(Sprite(playerTexture))
-            .addComponent(Transform2d());
+            .addComponent(Transform2d())
+            .addComponent(TilemapRenderTracker());
 
         es.makeEntity()
             .addComponent(WeaponHud())
             .addComponent(Transform2d({100, 100}));
-
     }, [] {});
     // }, [] {});
 

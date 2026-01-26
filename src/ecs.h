@@ -3,13 +3,14 @@
 
 #include <cinttypes>
 #include <vector>
-#include <memory>
 #include <functional>
 #include <unordered_map>
 #include <unordered_set>
+#include <tuple>
 
 #include "iter.h"
 #include "logging.h"
+
 
 #define COMPONENT_STORAGE(type) static ComponentStorage<type>& getStoreStatically() { static ComponentStorage<type> store; return store; } ComponentStorage<type>* getComponentStorage() override { return &getStoreStatically(); }
 
@@ -195,6 +196,28 @@ namespace ECS {
         return [f...] {
               (f(), ...);
         };
+    }
+
+    template <typename First, typename ... Rest>
+    std::optional<std::tuple<First*, Rest*...>> findOneOf() {
+        std::optional<std::tuple<First*, Rest*...>> res;
+
+        ECS::query<First, Rest...>([&](const Entity, First& val, Rest&... val2) {
+            res = std::make_tuple(&val, &val2...);
+        });
+
+        return res;
+    }
+
+    template <typename First, typename... Rest>
+    std::vector<std::tuple<First, Rest...>> collect() {
+        std::vector<std::tuple<First, Rest...>> res;
+
+        ECS::query<First, Rest...>([&](const Entity, First& f, Rest&... r) {
+            res.push_back(std::make_tuple(f, r...));
+        });
+
+        return res;
     }
 }
 

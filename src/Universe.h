@@ -65,8 +65,18 @@ namespace Universe {
 struct Timestamp {
     double start;
 
-    Timestamp() {
-        start = Universe::getGameTime();
+    explicit Timestamp(const double time) {
+        start = time;
+    }
+
+    [[nodiscard]] static Timestamp longAgo() {
+        return Timestamp(
+            std::numeric_limits<double>::lowest()
+        );
+    }
+
+    [[nodiscard]] static Timestamp now() {
+        return Timestamp(Universe::getGameTime());
     }
 
     [[nodiscard]] bool hasElasped(const Duration dur) const {

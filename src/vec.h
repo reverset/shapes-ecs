@@ -136,6 +136,10 @@ struct Vec2 {
         };
     }
 
+    explicit operator Vec2ui() const {
+        return {static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y)};
+    }
+
     operator Vector2() const {
         return toRaylibVector2();
     }
