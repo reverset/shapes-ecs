@@ -22,6 +22,10 @@ struct Vec2ui {
     [[nodiscard]] std::string toString() const {
         return GameUtil::fmt("Vec2ui(x=%zu, y=%zu)", x, y);
     }
+
+    Vec2ui operator%(const Vec2ui& other) const {
+        return {x % other.x, y % other.y};
+    }
 };
 
 struct Vec2 {
@@ -29,6 +33,10 @@ struct Vec2 {
 
     [[nodiscard]] static Vec2 zero() {
         return {0, 0};
+    }
+
+    static Vec2 fromInts(const std::uint32_t x, const std::uint32_t y) {
+        return { static_cast<float>(x), static_cast<float>(y) };
     }
 
     static Vec2 fromAngle(const float angle, const float magnitude) {
@@ -97,6 +105,10 @@ struct Vec2 {
         return *this;
     }
 
+    Vec2 operator%(const float other) const {
+        return {std::fmod(x, other), std::fmod(y, other)};
+    }
+
     [[nodiscard]] float toAngle() const {
         return std::atan2(y, x);
     }
@@ -134,6 +146,11 @@ struct Vec2 {
             GameUtil::lerp(x, target.x, delta),
             GameUtil::lerp(y, target.y, delta),
         };
+    }
+
+    explicit Vec2(const Vec2ui other) {
+        x = static_cast<float>(other.x);
+        y = static_cast<float>(other.y);
     }
 
     explicit operator Vec2ui() const {

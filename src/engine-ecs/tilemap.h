@@ -27,11 +27,18 @@ class Tilemap : public Component<Tilemap> {
     using TileHashMap = std::unordered_map<Vec2ui, std::vector<Tile>, SpatialHash>;
 
     std::vector<TileHashMap> tiles;
+    std::vector<std::unordered_map<Vec2ui, RenderTexture2D, SpatialHash>> cachedTiles;
+
     std::uint32_t width;
     std::uint32_t height;
 
     float scalingFactor;
     float inverseScalingFactor;
+
+    [[nodiscard]] static Logging::Logger& getLogger() {
+        static auto logger = LOGGER(Tilemap);
+        return logger;
+    }
 
 public:
     COMPONENT_STORAGE(Tilemap);
@@ -47,7 +54,20 @@ public:
 
         for (std::size_t i = 0; i < layers; ++i) {
             tiles.emplace_back();
+            cachedTiles.emplace_back();
         }
+    }
+
+    [[nodiscard]] std::uint32_t getWidth() const {
+        return width;
+    }
+
+    [[nodiscard]] std::uint32_t getHeight() const {
+        return height;
+    }
+
+    [[nodiscard]] bool isSpaceCached(const std::size_t layer, const Vec2ui hash) const {
+        return cachedTiles.at(layer).contains(hash);
     }
 
     [[nodiscard]] constexpr std::size_t getLayerCount() const noexcept {
@@ -64,6 +84,46 @@ public:
 
     [[nodiscard]] const std::vector<Tile>& getTileView(const std::size_t layer, const Vec2ui hash) {
         return tiles.at(layer)[hash];
+    }
+
+    [[nodiscard]] RenderTexture2D& getCachedTileTexture(const std::size_t layer, const Vec2ui hash) {
+        return cachedTiles.at(layer).at(hash);
+    }
+
+    void preprocessSpace(const std::size_t layer, const Vec2ui hash) {
+        if (isSpaceCached(layer, hash)) {
+            UnloadRenderTexture(cachedTiles.at(layer).at(hash));
+            cachedTiles.at(layer).erase(hash);
+        }
+
+        const RenderTexture2D tile = LoadRenderTexture(static_cast<int>(static_cast<float>(xHashFactor) * scalingFactor),
+                                                       static_cast<int>(static_cast<float>(yHashFactor) * scalingFactor));
+        std::size_t drawCalls = 0;
+        BeginTextureMode(tile);
+        ClearBackground(BLACK);
+
+        for (const auto& [sprite, position] : getTileView(layer, hash)) {
+            const auto pos = Vec2{position % Vec2ui{xHashFactor, yHashFactor}} * scalingFactor;
+
+            const auto texture = sprite.texture->getTexture().value();
+            const auto posFixedForCenter = pos + Vec2{static_cast<float>(texture.width)/2.0f, static_cast<float>(texture.height)/2.0f};
+
+            sprite.texture->renderEx(posFixedForCenter, sprite.offset, 0.0f, 1.0f, sprite.tint);
+            drawCalls++;
+        }
+        EndTextureMode();
+
+        cachedTiles.at(layer)[hash] = tile;
+
+        getLogger().log("Cached %zu draw calls.", drawCalls);
+    }
+
+    void unloadAllCachedTextures() const {
+        for (std::size_t i = 0; i < getLayerCount(); ++i) {
+            for (const auto& tex : cachedTiles.at(i) | std::views::values) {
+                UnloadRenderTexture(tex);
+            }
+        }
     }
 
     template <typename Func>
@@ -116,14 +176,18 @@ public:
         return point.has_value();
     }
 
+    [[nodiscard]] float getScalingFactor() const {
+        return scalingFactor;
+    }
+
     void insertTile(const std::size_t layer, const Tile& tile) {
         auto& map = getLayer(layer);
 
         const auto ix = tile.position.x / xHashFactor;
         const auto iy = tile.position.y / yHashFactor;
 
-        const Vec2ui vec{ix, iy};
-        map[vec].push_back(tile);
+        const Vec2ui hash{ix, iy};
+        map[hash].push_back(tile);
     }
 
     void fillTile(const std::size_t layer, const Sprite& sprite, const Vec2ui start, const Vec2ui end) {
@@ -133,6 +197,15 @@ public:
                     .sprite = sprite,
                     .position = {x, y},
                 });
+            }
+        }
+    }
+
+    void cacheAll() {
+        for (std::size_t i = 0; i < getLayerCount(); ++i) {
+            for (const auto hash : getLayerView(i) | std::views::keys) {
+                getLogger().log("Caching tile textures. Layer=%zu, hash=%s", i, hash.toString().c_str());
+                preprocessSpace(i, hash);
             }
         }
     }
@@ -148,6 +221,10 @@ namespace TilemapSystems {
             const auto pos = map.toWorldPosition(trans.position, tile.position);
             tile.sprite.texture->renderEx(pos, tile.sprite.offset, 0.0f, 1.0f, tile.sprite.tint);
         });
+    }
+
+    inline void unloadRenderTexturesInTilemaps(const Entity, const Tilemap& map) {
+        map.unloadAllCachedTextures();
     }
 
     // TODO: part of this function does not have to run as frequently as the actual rendering part. (hashing part can run wayyy less frequently)
@@ -169,9 +246,29 @@ namespace TilemapSystems {
 
                     const auto desiredHash = Vec2ui(desiredPosition);
 
-                    for (const auto&[sprite, position] : map.getTileView(layer, desiredHash)) {
-                        const auto pos = map.toWorldPosition(trans.position, position);
-                        sprite.texture->renderEx(pos, sprite.offset, 0.0f, 1.0f, sprite.tint);
+                    if (map.isSpaceCached(layer, desiredHash)) {
+                        const RenderTexture2D& tex = map.getCachedTileTexture(layer, desiredHash);
+                        const auto texturePosition = trans.position +
+                            Vec2{desiredHash} *
+                                Vec2::fromInts(tex.texture.width, tex.texture.height);
+
+                        const auto width = static_cast<float>(tex.texture.width);
+                        const auto height = static_cast<float>(tex.texture.height);
+
+                        DrawTexturePro(
+                            tex.texture,
+                            {0, 0, width, -height},
+                            {texturePosition.x, texturePosition.y, width, height},
+                            {0, 0},
+                            0.0f,
+                            WHITE
+                        );
+                        // DrawTexture(tex.texture, texturePosition.xInt(), texturePosition.yInt(), WHITE);
+                    } else {
+                        for (const auto&[sprite, position] : map.getTileView(layer, desiredHash)) {
+                            const auto pos = map.toWorldPosition(trans.position, position);
+                            sprite.texture->renderEx(pos, sprite.offset, 0.0f, 1.0f, sprite.tint);
+                        }
                     }
                 }
             }
@@ -180,7 +277,11 @@ namespace TilemapSystems {
     }
 
     inline void registerAll() {
-        Universe::onEarlyRender2d.registerSystem<Tilemap, Transform2d>(renderTilemapsInFull);
+        Universe::onEarlyRender2d
+            .registerSystem<Tilemap, Transform2d>(renderTilemapsInFull);
+
+        Universe::onDeInit
+            .registerSystem<Tilemap>(unloadRenderTexturesInTilemaps);
     }
 }
 

@@ -141,6 +141,8 @@ void loadMap() {
 
     map.fillTile(0, Sprite(grassTexture), {0, 0}, {100, 100});
 
+    map.cacheAll();
+
     es.makeEntity()
         .addComponent(std::move(map))
         .addComponent(Transform2d());
@@ -176,7 +178,7 @@ int main() {
 
         Universe::getCamera()->zoom = 3.0f;
         // Universe::getCamera()->zoom = 0.5f;
-
+ 
         RenderingSystems::registerAll();
         UsefulSystems::registerAll();
         // TilemapSystems::registerAll();

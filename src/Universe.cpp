@@ -55,6 +55,8 @@ namespace Universe {
     }
 
     void renderAll() {
+        prepaint.tick();
+
         BeginDrawing();
         ClearBackground(DARKGRAY);
         BeginMode2D(camera);
@@ -80,7 +82,10 @@ namespace Universe {
     }
 
     void deInit(const std::function<void()>& stop) {
-        std::cout << "Shutting down ..." << std::endl;
+        Logging::log("Shutting down...");
+
+        onDeInit.tick();
+
         delete resourceManager;
 
         stop();

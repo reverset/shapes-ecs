@@ -5,7 +5,6 @@
 
 #include <functional>
 
-#include "util.h"
 #include "resource.h"
 #include "vec.h"
 #include "inputsys.h"
@@ -16,11 +15,15 @@ namespace Universe {
     inline Schedule onUpdate;
     inline Schedule onLateUpdate;
 
+    inline Schedule prepaint;
+
     inline Schedule onEarlyRender2d; // temporary solution until render ordering is implemented
     inline Schedule onRender2d; // idea... implement a system that will then query the other rendering systems in 'order'
     inline Schedule onLateRender2d;
 
     inline Schedule onRenderUi;
+
+    inline Schedule onDeInit;
 
     EntityStorage& getEntityStorage();
 
