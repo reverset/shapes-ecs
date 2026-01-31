@@ -5,7 +5,7 @@
 #include "raylib.h"
 #include "Universe.h"
 #include "resource.h"
-#include "ParticleSystem.h"
+#include "engine-ecs/particles.h"
 #include "ecs.h"
 #include "timer.h"
 
@@ -73,6 +73,10 @@ void playerMovement(const Entity, const Player&, Transform2d& trans) {
 
     static constexpr int SPEED = 100;
     trans.position += movDelta * (Universe::getScaledDeltaTime() * SPEED);
+
+    if (IsKeyPressed(KEY_L)) {
+        Particles::sparkle(trans.position + Vec2{50, 0});
+    }
 }
 
 void spawnBullet(const Entity attacker, const std::uint32_t baseDamage, const Vec2 pos, const Vec2 vel, float hitboxScale, const std::string& spriteName = "bullet") {
@@ -181,7 +185,8 @@ int main() {
  
         RenderingSystems::registerAll();
         UsefulSystems::registerAll();
-        // TilemapSystems::registerAll();
+        StandardComponentSystems::registerAll();
+        TilemapSystems::registerAll();
 
         Universe::onUpdate
             .registerSystem<Player, Transform2d>(playerMovement)
@@ -192,8 +197,8 @@ int main() {
         Universe::onLateUpdate
             .registerSystem<Player, Transform2d>(centerCameraOnPlayer);
 
-        Universe::onEarlyRender2d
-            .registerSystem<Tilemap, Transform2d>(TilemapSystems::renderTilemapsChunked);
+        // Universe::onEarlyRender2d
+        //     .registerSystem<Tilemap, Transform2d>(TilemapSystems::renderTilemapsChunked);
 
         Universe::onRenderUi.registerSystem<WeaponHud, Transform2d>(renderWeaponHud);
 

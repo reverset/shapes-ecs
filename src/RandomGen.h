@@ -6,6 +6,7 @@ namespace RandomGen {
     void init();
     int random(int min, int max);
     double randomNormalized();
+    float randomFloat(float min, float max);
 }
 
 

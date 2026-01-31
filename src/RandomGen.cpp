@@ -18,6 +18,11 @@ namespace RandomGen {
         return dis(engine.value());
     }
 
+    float randomFloat(const float min, const float max) {
+        std::uniform_real_distribution dis(min, max);
+        return dis(engine.value());
+    }
+
     double randomNormalized() {
         std::uniform_real_distribution dis(0.0, 1.0);
         return dis(engine.value());

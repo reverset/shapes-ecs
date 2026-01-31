@@ -244,7 +244,7 @@ namespace TilemapSystems {
                     const Vec2 desiredPosition = {static_cast<float>(relativeTracker.x) + x, static_cast<float>(relativeTracker.y) + y};
                     if (desiredPosition.x < 0 || desiredPosition.y < 0) continue;
 
-                    const auto desiredHash = Vec2ui(desiredPosition);
+                    const auto desiredHash = static_cast<Vec2ui>(desiredPosition);
 
                     if (map.isSpaceCached(layer, desiredHash)) {
                         const RenderTexture2D& tex = map.getCachedTileTexture(layer, desiredHash);
@@ -277,8 +277,11 @@ namespace TilemapSystems {
     }
 
     inline void registerAll() {
+        // Universe::onEarlyRender2d
+        //     .registerSystem<Tilemap, Transform2d>(renderTilemapsInFull);
+
         Universe::onEarlyRender2d
-            .registerSystem<Tilemap, Transform2d>(renderTilemapsInFull);
+            .registerSystem<Tilemap, Transform2d>(renderTilemapsChunked);
 
         Universe::onDeInit
             .registerSystem<Tilemap>(unloadRenderTexturesInTilemaps);

@@ -3,6 +3,7 @@
 
 #include "../ecs.h"
 #include "../timer.h"
+#include "standardcomponents.h"
 
 struct Transient : Component<Transient> {
     COMPONENT_STORAGE(Transient);
@@ -25,6 +26,25 @@ struct Velocity : Component<Velocity> {
     explicit Velocity(const Vec2 linearVel) {
         this->velocity = linearVel;
     }
+
+    explicit Velocity(const float x, float y) {
+        velocity = {x, y};
+    }
+
+    explicit Velocity(const float x, float y, const float theta) {
+        velocity = {x, y};
+        angularVelocity = theta;
+    }
+};
+
+struct ConstantForce : Component<ConstantForce> {
+    COMPONENT_STORAGE(ConstantForce);
+
+    Vec2 force = {0, 0};
+
+    explicit ConstantForce(const float xForce, const float yForce) {
+        this->force = {xForce, yForce};
+    }
 };
 
 namespace UsefulSystems {
@@ -44,9 +64,16 @@ namespace UsefulSystems {
         trans.rotation += velocity.angularVelocity * Universe::getScaledDeltaTime();
     }
 
+    inline void applyConstantForce(const Entity, const ConstantForce& force, Velocity& vel) {
+        vel.velocity += force.force * Universe::getScaledDeltaTime();
+    }
+
     inline void registerAll() {
+        Universe::onUpdate.registerSystem<ConstantForce, Velocity>(applyConstantForce);
         Universe::onUpdate.registerSystem<Transient>(removeTransient);
     }
 }
+
+
 
 #endif //GAME_USEFUL_H

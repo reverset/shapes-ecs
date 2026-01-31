@@ -47,4 +47,34 @@ struct Sprite : Component<Sprite> {
     }
 };
 
+struct FadeOverTime : Component<FadeOverTime> {
+    COMPONENT_STORAGE(FadeOverTime);
+
+    Timestamp start = Timestamp::now();
+    Duration fadeTime{};
+
+    explicit FadeOverTime(Duration dur) {
+        this->fadeTime = dur;
+    }
+};
+
+namespace StandardComponentSystems {
+    void fadeOverTime(const Entity e, const FadeOverTime& time, Sprite& sprite) {
+        sprite.tint = Fade(sprite.tint, 
+            static_cast<float>(1.0 - time.start.normalizedElapsed(time.fadeTime)));
+
+        if (sprite.tint.a >= 255) {
+            Universe::defer([e] {
+                auto& store = FadeOverTime::getStoreStatically();
+                
+                if (store.contains(e)) store.remove(e);
+            });
+        }
+    }
+
+    void registerAll() {
+        Universe::onUpdate.registerSystem<FadeOverTime, Sprite>(fadeOverTime);
+    }
+}
+
 #endif //GAME_STANDARDCOMPONENTS_H

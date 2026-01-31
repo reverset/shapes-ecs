@@ -21,6 +21,8 @@ namespace Universe {
 
     Input input;
 
+    bool isProcessing = false;
+
     int resolutionX, resolutionY;
 
     int getResolutionX() {
@@ -29,6 +31,10 @@ namespace Universe {
 
     int getResolutionY() {
         return resolutionY;
+    }
+
+    bool areEntitiesBusy() {
+        return isProcessing;
     }
 
     Camera2D camera;
@@ -95,8 +101,10 @@ namespace Universe {
 
     void runBlocking() {
         while (!WindowShouldClose() && !shutdown) {
+            isProcessing = true;
             updateAll();
             renderAll();
+            isProcessing = false;
             runDeferred();
 
             gameTime += getScaledDeltaTime();

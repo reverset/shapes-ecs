@@ -10,6 +10,7 @@
 #include "inputsys.h"
 #include "ecs.h"
 #include "timer.h"
+#include "util.h"
 
 namespace Universe {
     inline Schedule onUpdate;
@@ -37,6 +38,8 @@ namespace Universe {
     int getResolutionX();
     int getResolutionY();
 
+    bool areEntitiesBusy();
+
     inline float getAxisInput(const KeyboardKey neg, const KeyboardKey pos) {
         return (IsKeyDown(neg) ? -1.0f : 0.0f)
             + (IsKeyDown(pos) ? 1.0f : 0.0f);
@@ -62,7 +65,6 @@ namespace Universe {
     double getTimeScale();
 
     float getScaledDeltaTime();
-
 } // Universe
 
 struct Timestamp {
@@ -84,6 +86,14 @@ struct Timestamp {
 
     [[nodiscard]] bool hasElasped(const Duration dur) const {
         return Universe::getGameTime() > start + dur.toSeconds();
+    }
+
+    [[nodiscard]] double normalizedElapsed(Duration max) const {
+        return GameUtil::clamp(
+            (Universe::getGameTime() - start) / max.toSeconds(), 
+            0.0,
+            1.0
+        );
     }
 };
 

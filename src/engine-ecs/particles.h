@@ -5,9 +5,36 @@
 #include <functional>
 #include <stdexcept>
 
-#include "vec.h"
-#include "util.h"
-#include "timer.h"
+#include "../vec.h"
+#include "../util.h"
+#include "../timer.h"
+#include "useful.h"
+#include "standardcomponents.h"
+#include "rendering.h"
+
+namespace Particles {
+    void sparkle(Vec2 pos) {
+        if (Universe::areEntitiesBusy()) {
+            Universe::defer([=] {sparkle(pos);});
+            return;
+        }
+
+        const auto sparkleTexture = *Universe::getResourceManager()->getResource<TextureResource>("spark");
+        
+        const std::size_t particles = 4;
+        for (std::size_t i = 0; i < particles; i++) {
+            const auto lifetime = Duration::ofSeconds(1.0);
+            Universe::getEntityStorage()
+                .makeEntity()
+                    .addComponent(Transform2d(pos + Vec2::randomDirection(3)))
+                    .addComponent(Velocity(RandomGen::random(-50, 50), RandomGen::random(-50, -20), RandomGen::randomFloat(-3, 3)))
+                    .addComponent(ConstantForce(0, 100))
+                    .addComponent(Sprite(sparkleTexture))
+                    .addComponent(FadeOverTime(lifetime))
+                    .addComponent(Transient(lifetime));
+        }
+    }
+}
 
 // TODO: variable lifetime (random), self-destruction of particle emitter. (perhaps change architecture to an ECS?)
 
