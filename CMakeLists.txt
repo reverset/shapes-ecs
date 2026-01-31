@@ -15,25 +15,23 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(raylib)
 
 add_executable(game
-        src/main.cpp
-        src/Universe.cpp
-        src/Universe.h
-        src/vec.h
-        src/timer.h
-        src/Files.h
-        src/resource.h
-        src/util.h
-        src/inputsys.h
-        src/ParticleSystem.h
-        src/RandomGen.cpp
-        src/RandomGen.h
-        src/ecs.h
-        src/logging.h
-        src/iter.h
-        src/engine-ecs/standardcomponents.h
-        src/engine-ecs/rendering.h
-        src/engine-ecs/useful.h
-        src/engine-ecs/tilemap.h
+        src/game/main.cpp
+        src/engine/Universe.cpp
+        src/engine/Universe.h
+        src/engine/vec.h
+        src/engine/timer.h
+        src/engine/Files.h
+        src/engine/resource.h
+        src/engine/util.h
+        src/engine/inputsys.h
+        src/engine/RandomGen.cpp
+        src/engine/RandomGen.h
+        src/engine/ecs.h
+        src/engine/logging.h
+        src/engine/particles.h
+        src/engine/standardcomponents.h
+        src/engine/rendering.h
+        src/engine/tilemap.h
 )
 
 target_link_libraries(game PRIVATE raylib)

@@ -1,8 +1,8 @@
 #ifndef GAME_RENDERING_H
 #define GAME_RENDERING_H
 
-#include "../ecs.h"
-#include "../Universe.h"
+#include "ecs.h"
+#include "Universe.h"
 #include "standardcomponents.h"
 
 namespace RenderingSystems {

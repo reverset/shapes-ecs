@@ -4,9 +4,9 @@
 #include "vector"
 #include "raylib.h"
 
-#include "../ecs.h"
-#include "../engine-ecs/rendering.h"
-#include "../vec.h"
+#include "ecs.h"
+#include "../engine/rendering.h"
+#include "vec.h"
 
 struct SpatialHash {
     std::size_t operator()(const Vec2ui& vec) const noexcept {

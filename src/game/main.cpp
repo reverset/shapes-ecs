@@ -1,18 +1,17 @@
 #include <iostream>
 
-#include "Files.h"
+#include "../engine/Files.h"
 
 #include "raylib.h"
-#include "Universe.h"
-#include "resource.h"
-#include "engine-ecs/particles.h"
-#include "ecs.h"
-#include "timer.h"
+#include "../engine/Universe.h"
+#include "../engine/resource.h"
+#include "../engine/particles.h"
+#include "../engine/ecs.h"
+#include "../engine/timer.h"
 
-#include "engine-ecs/standardcomponents.h"
-#include "engine-ecs/rendering.h"
-#include "engine-ecs/useful.h"
-#include "engine-ecs/tilemap.h"
+#include "../engine/standardcomponents.h"
+#include "../engine/rendering.h"
+#include "../engine/tilemap.h"
 
 struct Weapon {
     Timestamp lastFiredTimestamp = Timestamp::longAgo();
@@ -184,14 +183,13 @@ int main() {
         // Universe::getCamera()->zoom = 0.5f;
  
         RenderingSystems::registerAll();
-        UsefulSystems::registerAll();
         StandardComponentSystems::registerAll();
         TilemapSystems::registerAll();
 
         Universe::onUpdate
             .registerSystem<Player, Transform2d>(playerMovement)
             .registerSystem<Player, Transform2d>(playerAttackControl)
-            .registerSystem<Velocity, Transform2d>(UsefulSystems::applyVelocity)
+            .registerSystem<Velocity, Transform2d>(StandardComponentSystems::applyVelocity)
             .registerSystem<Tilemap, Transform2d>(rightClickPlaceTile);
 
         Universe::onLateUpdate
