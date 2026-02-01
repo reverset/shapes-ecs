@@ -100,6 +100,54 @@ struct ConstantForce : Component<ConstantForce> {
     }
 };
 
+
+struct CollisionRect : Component<CollisionRect> {
+    COMPONENT_STORAGE(CollisionRect);
+
+    Vec2 dimensions = {0, 0};
+    std::uint32_t layer = 0;
+    std::uint32_t mask = 0;
+
+    explicit CollisionRect(const float width, const float height, const std::uint32_t layer, const std::uint32_t mask) {
+        this->dimensions = {width, height};
+        this->layer = layer;
+        this->mask = mask;
+    }
+
+    explicit CollisionRect(const float width, const float height) : CollisionRect(width, height, 0, 0) {}
+
+    CollisionRect& setLayerAt(const std::uint32_t l, const bool val) {
+        if (val) layer |= (1u << l);
+        else layer &= ~(1u << l);
+
+        return *this;
+    }
+
+    CollisionRect& setMaskAt(const std::uint32_t l, const bool val) {
+        if (val) mask |= (1u << l);
+        else mask &= ~(1u << l);
+
+        return *this;
+    }
+
+    [[nodiscard]] constexpr bool isOnLayer(const std::uint32_t l) const {
+        return (layer & (1u << l)) != 0;
+    }
+
+    [[nodiscard]] constexpr bool checkMask(const std::uint32_t l) const {
+        return (mask & (1u << l)) != 0;
+    }
+
+    [[nodiscard]] constexpr Rectangle makeRect(const Vec2 pos) const {
+        return {
+            pos.x - dimensions.x*0.5f, // center
+            pos.y - dimensions.y*0.5f,
+            dimensions.x,
+            dimensions.y,
+        };
+    }
+};
+
 namespace StandardComponentSystems {
     inline void removeTransient(const Entity e, const Transient& transient) {
         const auto time = Universe::getGameTime();
@@ -134,10 +182,18 @@ namespace StandardComponentSystems {
         }
     }
 
+    inline void debugDrawCollisionRects(const Entity, const CollisionRect& collisionRect, const Transform2d& trans) {
+        DrawRectangleLinesEx(collisionRect.makeRect(trans.position), 2.0f, RED);
+    }
+
     inline void registerAll() {
         Universe::onUpdate.registerSystem<FadeOverTime, Sprite>(fadeOverTime);
         Universe::onUpdate.registerSystem<ConstantForce, Velocity>(applyConstantForce);
         Universe::onUpdate.registerSystem<Transient>(removeTransient);
+    }
+
+    inline void enableDebugRendering() {
+        Universe::onLateRender2d.registerSystem<CollisionRect, Transform2d>(debugDrawCollisionRects);
     }
 }
 

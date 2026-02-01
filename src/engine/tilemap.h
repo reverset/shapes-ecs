@@ -7,6 +7,8 @@
 #include "ecs.h"
 #include "vec.h"
 
+#include "event.h"
+
 struct SpatialHash {
     std::size_t operator()(const Vec2ui& vec) const noexcept {
         static constexpr std::uint32_t p1 = 73856093;
@@ -242,6 +244,12 @@ struct TilemapCollider : Component<TilemapCollider> {
     }
 };
 
+struct TilemapCollisionEvent : Event<TilemapCollisionEvent> {
+    EVENT_STORAGE(TilemapCollisionEvent);
+
+    Entity collided;
+};
+
 namespace TilemapSystems {
     inline void renderTilemapsInFull(const Entity, const Tilemap& map, const Transform2d& trans) {
         map.forEachTile([&](const Tile& tile) {
@@ -254,7 +262,7 @@ namespace TilemapSystems {
         map.unloadAllCachedTextures();
     }
 
-    inline void checkTilemapCollisions(const Entity, const TilemapCollider& collider, Transform2d& trans) {
+    inline void checkTilemapCollisions(const Entity theCollided, const TilemapCollider& collider, Transform2d& trans) {
         ECS::query<Tilemap, Transform2d>([&](const Entity, const Tilemap& map, const Transform2d& mapTrans) {
             const auto relPos = trans.position - mapTrans.position;
             if (relPos.x < 0 || relPos.y < 0) return;
@@ -324,6 +332,11 @@ namespace TilemapSystems {
                             } else {
                                 trans.position.y += std::copysign(minY, delta.y);
                             }
+
+                            TilemapCollisionEvent event = {
+                                .collided = theCollided,
+                            };
+                            event.send();
                         }
                     }
                 }

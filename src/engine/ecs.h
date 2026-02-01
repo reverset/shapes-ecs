@@ -183,6 +183,17 @@ namespace ECS {
         }
     }
 
+    template <typename... Rest, typename Func>
+    void queryComponentsFor(Entity e, Func&& f) {
+        if ((Rest::getStoreStatically().contains(e) && ...)) {
+            f(
+                e,
+                Rest::getStoreStatically().get(e)...
+            );
+        }
+
+    }
+
     template <typename First, typename... Rest, typename Func>
     std::function<void()> createCallableSystem(Func&& f) {
         return [&] {
@@ -269,6 +280,14 @@ public:
         return entities.size();
     }
 
+    template <typename T>
+    void insertComponent(Entity e, T comp) { // code duplication, but its ok
+        auto dyn = getComponents(e);
+        dyn->push_back(DynamicComponent::of(comp));
+
+        comp.getComponentStorage()->add(e, std::move(comp));
+    }
+
     [[nodiscard]] std::vector<DynamicComponent>* getComponents(const Entity e) {
         if (!entities.contains(e)) {
             Logging::logWarn("attempt to get components of non-existent entity. id=%zu", e.id);
@@ -278,6 +297,7 @@ public:
         return &entities.at(e);
     }
 
+    // WARNING: NEVER access data from an entities components after this function is called.
     void destroyEntity(const Entity e) {
         if (!entities.contains(e)) {
             Logging::logWarn("attempted to destroy non-existent entity! id=%zu", e.id);

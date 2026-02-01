@@ -32,6 +32,8 @@ add_executable(game
         src/engine/standardcomponents.h
         src/engine/rendering.h
         src/engine/tilemap.h
+        src/game/BitLayers.h
+        src/engine/event.h
 )
 
 target_link_libraries(game PRIVATE raylib)

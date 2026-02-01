@@ -2,6 +2,7 @@
 #include <iostream>
 
 
+#include "BitLayers.h"
 #include "raylib.h"
 #include "../engine/Universe.h"
 #include "../engine/resource.h"
@@ -79,16 +80,18 @@ void playerMovement(const Entity, const Player&, Transform2d& trans) {
     }
 }
 
-void spawnBullet(const Entity attacker, const std::uint32_t baseDamage, const Vec2 pos, const Vec2 vel, float hitboxScale, const std::string& spriteName = "bullet") {
+Entity spawnBullet(const Entity attacker, const std::uint32_t baseDamage, const Vec2 pos, const Vec2 vel, const float hitboxScale, const BitLayers::Type mask, const std::string& spriteName = "bullet") {
     const auto sprite = *Universe::getResourceManager()->getResource<TextureResource>(spriteName);
 
     auto& store = Universe::getEntityStorage();
-    store.makeEntity()
+    return store.makeEntity()
         .addComponent(Sprite(sprite))
         .addComponent(Transform2d(pos, vel.toAngle(), 0.8f))
         .addComponent(Bullet(attacker, baseDamage))
         .addComponent(Velocity(vel))
-        .addComponent(Transient{Duration::ofSeconds(1.0)});
+        .addComponent(Transient{Duration::ofSeconds(1.0)})
+        .addComponent(CollisionRect(16 * hitboxScale, 16 * hitboxScale, BitLayers::NONE, mask))
+        .getEntity();
 }
 
 void playerAttackControl(const Entity e, Player& player, const Transform2d& trans) {
@@ -106,7 +109,8 @@ void playerAttackControl(const Entity e, Player& player, const Transform2d& tran
         const auto vel = direction * BULLET_SPEED;
 
         Universe::defer([=] {
-            spawnBullet(e, 10, trans.position, vel, 1.0f);
+            const auto bullet = spawnBullet(e, 10, trans.position, vel, 1.0f, BitLayers::ENEMY_LAYER);
+            Universe::getEntityStorage().insertComponent(bullet, TilemapCollider(8, 8));
         });
     }
 }
@@ -129,6 +133,13 @@ void rightClickPlaceTile(const Entity, Tilemap& map, const Transform2d& trans) {
             });
         }
     }
+}
+
+void handleBulletHitTile(const TilemapCollisionEvent& e) {
+    ECS::queryComponentsFor<Bullet, Transform2d>(e.collided, [](const Entity bullet, const Bullet&, const Transform2d& trans) {
+        Particles::sparkle(trans.position);
+        Universe::getEntityStorage().destroyEntity(bullet);
+    });
 }
 
 void loadMap() {
@@ -177,7 +188,6 @@ int main() {
 
     Universe::init(640, 360, "Game", [] {
         const auto man = Universe::getResourceManager();
-
         man->registerResource(
             "genericWall",
             new TextureResource("genericWall.png"));
@@ -206,6 +216,7 @@ int main() {
         RenderingSystems::registerAll();
         StandardComponentSystems::registerAll();
         TilemapSystems::registerAll();
+        // StandardComponentSystems::enableDebugRendering();
 
         Universe::onUpdate
             .registerSystem<Player, Transform2d>(playerMovement)
@@ -221,6 +232,8 @@ int main() {
 
         Universe::onRenderUi.registerSystem<WeaponHud, Transform2d>(renderWeaponHud);
 
+        TilemapCollisionEvent::listen(handleBulletHitTile);
+
         const auto playerTexture = *man->getResource<TextureResource>("player");
 
         auto& es = Universe::getEntityStorage();
@@ -232,7 +245,8 @@ int main() {
             .addComponent(Sprite(playerTexture))
             .addComponent(Transform2d())
             .addComponent(TilemapRenderTracker())
-            .addComponent(TilemapCollider(16, 16));
+            .addComponent(TilemapCollider(16, 16))
+            .addComponent(CollisionRect(16, 16, BitLayers::PLAYER_LAYER, BitLayers::ALL));
 
         es.makeEntity()
             .addComponent(WeaponHud())
