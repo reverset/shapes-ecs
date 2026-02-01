@@ -1,13 +1,14 @@
+#include <fstream>
 #include <iostream>
 
-#include "../engine/Files.h"
 
 #include "raylib.h"
 #include "../engine/Universe.h"
 #include "../engine/resource.h"
-#include "particles.h"
 #include "../engine/ecs.h"
 #include "../engine/timer.h"
+#include "../engine/Files.h"
+#include "particles.h"
 
 #include "../engine/standardcomponents.h"
 #include "../engine/rendering.h"
@@ -165,7 +166,14 @@ void loadMap() {
 }
 
 int main() {
-    // TODO update gamepad mapping for linux
+    // TODO update gamepad mapping for linux ... MIGHT BE MORE PROBLEMATIC THAN ANTICIPATED
+
+    // std::ifstream fstream(Files::path("gamecontrollerdb.txt"));
+    // std::stringstream buffer;
+    //
+    // buffer << fstream.rdbuf();
+    //
+    // SetGamepadMappings(buffer.str().c_str());
 
     Universe::init(640, 360, "Game", [] {
         const auto man = Universe::getResourceManager();
