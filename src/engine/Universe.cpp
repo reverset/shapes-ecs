@@ -116,7 +116,7 @@ namespace Universe {
         resolutionY = height;
 
         camera = {
-            .offset = {static_cast<float>(width)/2.0f, static_cast<float>(height)/2.0f},
+            .offset = {static_cast<float>(width)*0.5f, static_cast<float>(height)*0.5f},
             .target = {0, 0},
             .rotation = 0.0f,
             .zoom = 1.0f,

@@ -5,7 +5,7 @@
 #include "raylib.h"
 #include "../engine/Universe.h"
 #include "../engine/resource.h"
-#include "../engine/particles.h"
+#include "particles.h"
 #include "../engine/ecs.h"
 #include "../engine/timer.h"
 
@@ -135,6 +135,7 @@ void loadMap() {
     auto& es = Universe::getEntityStorage();
 
     const auto grassTexture = *man->getResource<TextureResource>("grassTile");
+    const auto genericWallTexture = *man->getResource<TextureResource>("genericWall");
 
     auto map = Tilemap(100, 100, 16.0f, 3);
     // map.insertTile(0, Tile {
@@ -143,6 +144,18 @@ void loadMap() {
     // });
 
     map.fillTile(0, Sprite(grassTexture), {0, 0}, {100, 100});
+
+    map.insertTile(1, Tile{
+        .sprite = Sprite(genericWallTexture),
+        .position = Vec2ui{5, 5},
+    }, true);
+
+    map.insertTile(1, Tile{
+        .sprite = Sprite(genericWallTexture),
+        .position = Vec2ui{7, 5},
+    }, true);
+
+    map.fillTile(1, Sprite(genericWallTexture), {8, 8}, {12, 12}, true);
 
     map.cacheAll();
 
@@ -158,8 +171,8 @@ int main() {
         const auto man = Universe::getResourceManager();
 
         man->registerResource(
-            "floorTile",
-            new TextureResource("floorTile.png"));
+            "genericWall",
+            new TextureResource("genericWall.png"));
 
         man->registerResource(
             "player",
@@ -210,7 +223,8 @@ int main() {
             .addComponent(Player())
             .addComponent(Sprite(playerTexture))
             .addComponent(Transform2d())
-            .addComponent(TilemapRenderTracker());
+            .addComponent(TilemapRenderTracker())
+            .addComponent(TilemapCollider(16, 16));
 
         es.makeEntity()
             .addComponent(WeaponHud())

@@ -28,7 +28,7 @@ add_executable(game
         src/engine/RandomGen.h
         src/engine/ecs.h
         src/engine/logging.h
-        src/engine/particles.h
+        src/game/particles.h
         src/engine/standardcomponents.h
         src/engine/rendering.h
         src/engine/tilemap.h

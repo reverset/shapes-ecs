@@ -53,7 +53,7 @@ struct FadeOverTime : Component<FadeOverTime> {
     Timestamp start = Timestamp::now();
     Duration fadeTime{};
 
-    explicit FadeOverTime(Duration dur) {
+    explicit FadeOverTime(const Duration dur) {
         this->fadeTime = dur;
     }
 };

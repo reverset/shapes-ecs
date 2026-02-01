@@ -81,7 +81,7 @@ public:
         DrawTexturePro(*texture,
             {offset.x, offset.y, w, h},
             {pos.x, pos.y, sw, sh},
-            {sw/2.0f, sh/2.0f},
+            {sw*0.5f, sh*0.5f},
             rotation * RAD2DEG,
             tint);
     }

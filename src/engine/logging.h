@@ -5,7 +5,7 @@
 #include <chrono>
 #include "util.h"
 
-#define LOGGER(name) Logging::Logger(#name)
+#define NEW_LOGGER(name) Logging::Logger(#name)
 
 namespace Logging {
     inline bool loggingEnabled = true;

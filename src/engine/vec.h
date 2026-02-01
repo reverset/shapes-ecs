@@ -19,6 +19,13 @@ struct Vec2ui {
         return x == other.x && y == other.y;
     }
 
+    Vec2ui operator*(const float other) const {
+        return {
+            static_cast<std::uint32_t>(static_cast<float>(x) * other),
+            static_cast<std::uint32_t>(static_cast<float>(y) * other)
+        };
+    }
+
     [[nodiscard]] std::string toString() const {
         return GameUtil::fmt("Vec2ui(x=%zu, y=%zu)", x, y);
     }
@@ -146,6 +153,10 @@ struct Vec2 {
             GameUtil::lerp(x, target.x, delta),
             GameUtil::lerp(y, target.y, delta),
         };
+    }
+
+    [[nodiscard]] Vec2 resize(const float mag) const {
+        return *this * (mag / magnitude());
     }
 
     explicit Vec2(const Vec2ui other) {

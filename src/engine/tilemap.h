@@ -5,7 +5,6 @@
 #include "raylib.h"
 
 #include "ecs.h"
-#include "../engine/rendering.h"
 #include "vec.h"
 
 struct SpatialHash {
@@ -23,11 +22,12 @@ struct Tile {
 
 class Tilemap : public Component<Tilemap> {
 
-    // todo layers, and collision
     using TileHashMap = std::unordered_map<Vec2ui, std::vector<Tile>, SpatialHash>;
 
     std::vector<TileHashMap> tiles;
     std::vector<std::unordered_map<Vec2ui, RenderTexture2D, SpatialHash>> cachedTiles;
+
+    std::unordered_map<Vec2ui, bool, SpatialHash> collidableTiles;
 
     std::uint32_t width;
     std::uint32_t height;
@@ -36,7 +36,7 @@ class Tilemap : public Component<Tilemap> {
     float inverseScalingFactor;
 
     [[nodiscard]] static Logging::Logger& getLogger() {
-        static auto logger = LOGGER(Tilemap);
+        static auto logger = NEW_LOGGER(Tilemap);
         return logger;
     }
 
@@ -100,13 +100,13 @@ public:
                                                        static_cast<int>(static_cast<float>(yHashFactor) * scalingFactor));
         std::size_t drawCalls = 0;
         BeginTextureMode(tile);
-        ClearBackground(BLACK);
+        ClearBackground(Color{0, 0, 0, 1});
 
         for (const auto& [sprite, position] : getTileView(layer, hash)) {
             const auto pos = Vec2{position % Vec2ui{xHashFactor, yHashFactor}} * scalingFactor;
 
             const auto texture = sprite.texture->getTexture().value();
-            const auto posFixedForCenter = pos + Vec2{static_cast<float>(texture.width)/2.0f, static_cast<float>(texture.height)/2.0f};
+            const auto posFixedForCenter = pos + Vec2{static_cast<float>(texture.width)*0.5f, static_cast<float>(texture.height)*0.5f};
 
             sprite.texture->renderEx(posFixedForCenter, sprite.offset, 0.0f, 1.0f, sprite.tint);
             drawCalls++;
@@ -180,7 +180,16 @@ public:
         return scalingFactor;
     }
 
-    void insertTile(const std::size_t layer, const Tile& tile) {
+    [[nodiscard]] float getInverseScalingFactor() const {
+        return inverseScalingFactor;
+    }
+
+    [[nodiscard]] bool checkCollisionAt(const Vec2ui point) const {
+        if (!collidableTiles.contains(point)) return false;
+        return collidableTiles.at(point);
+    }
+
+    void insertTile(const std::size_t layer, const Tile& tile, const bool collidable = false) {
         auto& map = getLayer(layer);
 
         const auto ix = tile.position.x / xHashFactor;
@@ -188,15 +197,19 @@ public:
 
         const Vec2ui hash{ix, iy};
         map[hash].push_back(tile);
+
+        if (collidable) {
+            collidableTiles[tile.position] = true;
+        }
     }
 
-    void fillTile(const std::size_t layer, const Sprite& sprite, const Vec2ui start, const Vec2ui end) {
+    void fillTile(const std::size_t layer, const Sprite& sprite, const Vec2ui start, const Vec2ui end, const bool collidable = false) {
         for (std::uint32_t x = start.x; x < end.x; ++x) {
             for (std::uint32_t y = start.y; y < end.y; ++y) {
                 insertTile(layer, Tile {
                     .sprite = sprite,
                     .position = {x, y},
-                });
+                }, collidable);
             }
         }
     }
@@ -215,6 +228,20 @@ struct TilemapRenderTracker : Component<TilemapRenderTracker> {
     COMPONENT_STORAGE(TilemapRenderTracker);
 };
 
+struct TilemapCollider : Component<TilemapCollider> {
+    COMPONENT_STORAGE(TilemapCollider);
+
+    Vec2 dimensions{0, 0};
+
+    explicit TilemapCollider(const Vec2 dimensions) {
+        this->dimensions = dimensions;
+    }
+
+    explicit TilemapCollider(const float width, const float height) {
+        this->dimensions = {width, height};
+    }
+};
+
 namespace TilemapSystems {
     inline void renderTilemapsInFull(const Entity, const Tilemap& map, const Transform2d& trans) {
         map.forEachTile([&](const Tile& tile) {
@@ -225,6 +252,85 @@ namespace TilemapSystems {
 
     inline void unloadRenderTexturesInTilemaps(const Entity, const Tilemap& map) {
         map.unloadAllCachedTextures();
+    }
+
+    inline void checkTilemapCollisions(const Entity, const TilemapCollider& collider, Transform2d& trans) {
+        ECS::query<Tilemap, Transform2d>([&](const Entity, const Tilemap& map, const Transform2d& mapTrans) {
+            const auto relPos = trans.position - mapTrans.position;
+            if (relPos.x < 0 || relPos.y < 0) return;
+
+            const auto scaledPos = relPos * map.getInverseScalingFactor();
+            const auto index = static_cast<Vec2ui>(scaledPos);
+
+            for (std::int32_t x = static_cast<std::int32_t>(index.x) - 1; x < static_cast<std::int32_t>(index.x) + 2; ++x) {
+                if (x < 0) continue;
+
+                for (std::int32_t y = static_cast<std::int32_t>(index.y) - 1; y < static_cast<std::int32_t>(index.y) + 2; ++y) {
+                    if (y < 0) continue;
+
+                    const auto point = Vec2ui{
+                        static_cast<std::uint32_t>(x),
+                        static_cast<std::uint32_t>(y),
+                    };
+
+                    // const Rectangle debug = {
+                    //     static_cast<float>(x) * map.getScalingFactor(),
+                    //     static_cast<float>(y) * map.getScalingFactor(),
+                    //     16,
+                    //     16,
+                    // };
+                    //
+                    // DrawRectangleRec(debug, WHITE);
+
+                    if (map.checkCollisionAt(point)) {
+                        const Rectangle collisionRect = {
+                            trans.position.x - collider.dimensions.x / 2,
+                            trans.position.y - collider.dimensions.y / 2,
+                            collider.dimensions.x,
+                            collider.dimensions.y
+                        };
+
+                        const auto scaledPoint = point * map.getScalingFactor();
+                        const auto tilePoint = Vec2{
+                            mapTrans.position.x + static_cast<float>(scaledPoint.x),
+                            mapTrans.position.y + static_cast<float>(scaledPoint.y),
+                        };
+
+                        const Rectangle tileRect = {
+                            tilePoint.x,
+                            tilePoint.y,
+                            map.getScalingFactor(),
+                            map.getScalingFactor(),
+                        };
+
+                        if (CheckCollisionRecs(collisionRect, tileRect)) {
+                            Vec2 centeredTilePoint = {
+                                tilePoint.x + map.getScalingFactor()*0.5f,
+                                tilePoint.y + map.getScalingFactor()*0.5f
+                            };
+
+                            // math is hard
+                            // https://www.reddit.com/r/raylib/comments/13b7p8r/how_do_i_create_collisions/
+                            const Vec2 delta = trans.position - centeredTilePoint;
+
+                            const Vec2 hs1 = { collisionRect.width*0.5f, collisionRect.height*0.5f };
+                            const Vec2 hs2 = { map.getScalingFactor()*0.5f, map.getScalingFactor()*0.5f };
+
+                            const float minX = hs1.x + hs2.x - std::abs(delta.x);
+                            const float minY = hs1.y + hs2.y - std::abs(delta.y);
+
+                            if (minX < minY) {
+                                trans.position.x += std::copysign(minX, delta.x);
+                            } else {
+                                trans.position.y += std::copysign(minY, delta.y);
+                            }
+                        }
+                    }
+                }
+            }
+
+
+        });
     }
 
     // TODO: part of this function does not have to run as frequently as the actual rendering part. (hashing part can run wayyy less frequently)
@@ -280,8 +386,14 @@ namespace TilemapSystems {
         // Universe::onEarlyRender2d
         //     .registerSystem<Tilemap, Transform2d>(renderTilemapsInFull);
 
+        // Universe::onUpdate
+        //     .registerSystem<TilemapCollider, Transform2d>(checkTilemapCollisions);
+
         Universe::onEarlyRender2d
             .registerSystem<Tilemap, Transform2d>(renderTilemapsChunked);
+
+        Universe::onRender2d // debugging
+            .registerSystem<TilemapCollider, Transform2d>(checkTilemapCollisions);
 
         Universe::onDeInit
             .registerSystem<Tilemap>(unloadRenderTexturesInTilemaps);

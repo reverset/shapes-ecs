@@ -201,6 +201,7 @@ namespace ECS {
     std::optional<std::tuple<First*, Rest*...>> findOneOf() {
         std::optional<std::tuple<First*, Rest*...>> res;
 
+        // TODO: this will still iterate through multiple entities
         ECS::query<First, Rest...>([&](const Entity, First& val, Rest&... val2) {
             res = std::make_tuple(&val, &val2...);
         });
@@ -208,7 +209,7 @@ namespace ECS {
         return res;
     }
 
-    template <typename First, typename... Rest>
+    template <typename First, typename... Rest> // perhaps make a pointer version?
     std::vector<std::tuple<First, Rest...>> collect() {
         std::vector<std::tuple<First, Rest...>> res;
 
@@ -283,7 +284,7 @@ public:
             return;
         }
 
-        for (const auto comps = getComponents(e); auto& c : *comps) {
+        for (auto& c : *getComponents(e)) {
             c.remove(e);
         }
 
