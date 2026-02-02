@@ -3,6 +3,7 @@
 
 
 #include "BitLayers.h"
+#include "enemies.h"
 #include "raylib.h"
 #include "../engine/Universe.h"
 #include "../engine/resource.h"
@@ -12,7 +13,6 @@
 #include "particles.h"
 
 #include "../engine/standardcomponents.h"
-#include "../engine/rendering.h"
 #include "../engine/tilemap.h"
 
 struct Weapon {
@@ -142,6 +142,17 @@ void handleBulletHitTile(const TilemapCollisionEvent& e) {
     });
 }
 
+void handleBulletHitUnit(const ColliderOverlapEvent& event) {
+    ECS::queryComponentsFor<Bullet>(event.a, [&](const Entity bullet, const Bullet& bulletInfo) {
+        ECS::queryComponentsFor<Health>(event.b, [&](const Entity, Health& health) {
+            health.damage(bulletInfo.baseDamage);
+            Logging::log("HIT!! for %d, health left: %d", bulletInfo.baseDamage, health.health);
+        });
+
+        Universe::getEntityStorage().destroyEntity(bullet);
+    });
+}
+
 void loadMap() {
     const auto man = Universe::getResourceManager();
     auto& es = Universe::getEntityStorage();
@@ -176,6 +187,33 @@ void loadMap() {
         .addComponent(Transform2d());
 }
 
+void loadResources() {
+    const auto man = Universe::getResourceManager();
+    man->registerResource(
+        "genericWall",
+        new TextureResource("genericWall.png"));
+
+    man->registerResource(
+        "player",
+        new TextureResource("player.png"));
+
+    man->registerResource(
+        "spark",
+        new TextureResource("spark.png"));
+
+    man->registerResource(
+        "bullet",
+        new TextureResource("bullet.png"));
+
+    man->registerResource(
+        "grassTile",
+        new TextureResource("grass.png"));
+
+    man->registerResource(
+        "meanie",
+        new TextureResource("meanie.png"));
+}
+
 int main() {
     // TODO update gamepad mapping for linux ... MIGHT BE MORE PROBLEMATIC THAN ANTICIPATED
 
@@ -188,25 +226,7 @@ int main() {
 
     Universe::init(640, 360, "Game", [] {
         const auto man = Universe::getResourceManager();
-        man->registerResource(
-            "genericWall",
-            new TextureResource("genericWall.png"));
-
-        man->registerResource(
-            "player",
-            new TextureResource("player.png"));
-
-        man->registerResource(
-            "spark",
-            new TextureResource("spark.png"));
-
-        man->registerResource(
-            "bullet",
-            new TextureResource("bullet.png"));
-
-        man->registerResource(
-            "grassTile",
-            new TextureResource("grass.png"));
+        loadResources();
 
         defineKeybindings();
 
@@ -233,6 +253,7 @@ int main() {
         Universe::onRenderUi.registerSystem<WeaponHud, Transform2d>(renderWeaponHud);
 
         TilemapCollisionEvent::listen(handleBulletHitTile);
+        ColliderOverlapEvent::listen(handleBulletHitUnit);
 
         const auto playerTexture = *man->getResource<TextureResource>("player");
 
@@ -246,11 +267,13 @@ int main() {
             .addComponent(Transform2d())
             .addComponent(TilemapRenderTracker())
             .addComponent(TilemapCollider(16, 16))
-            .addComponent(CollisionRect(16, 16, BitLayers::PLAYER_LAYER, BitLayers::ALL));
+            .addComponent(CollisionRect(16, 16, BitLayers::PLAYER_LAYER, BitLayers::NONE));
 
         es.makeEntity()
             .addComponent(WeaponHud())
             .addComponent(Transform2d({100, 100}));
+
+        Enemies::spawnMeanie({120, 12});
     }, [] {});
     // }, [] {});
 

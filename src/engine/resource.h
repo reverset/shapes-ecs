@@ -10,11 +10,18 @@
 #include <stdexcept>
 
 #include "Files.h"
+#include "logging.h"
 #include "raylib.h"
 #include "vec.h"
 
 class Resource {
 protected:
+
+    static Logging::Logger& getLogger() {
+        static auto logger = NEW_LOGGER(Resource);
+        return logger;
+    }
+
     std::string path;
 
 public:
@@ -54,7 +61,11 @@ public:
     }
 
     void doLoad() override {
+        getLogger().log("Loading texture. path=%s", path.c_str());
         texture = LoadTexture(path.c_str());
+        if (!IsTextureValid(*texture)) {
+            getLogger().logWarn("Texture not found! path=%s", path.c_str());
+        }
     }
 
     void doUnload() override {

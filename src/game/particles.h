@@ -6,7 +6,6 @@
 #include "../engine/vec.h"
 #include "../engine/timer.h"
 #include "../engine/standardcomponents.h"
-#include "../engine/rendering.h"
 
 namespace Particles {
     inline void sparkle(const Vec2 pos) {

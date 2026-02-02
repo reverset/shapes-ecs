@@ -30,10 +30,11 @@ add_executable(game
         src/engine/logging.h
         src/game/particles.h
         src/engine/standardcomponents.h
-        src/engine/rendering.h
         src/engine/tilemap.h
         src/game/BitLayers.h
         src/engine/event.h
+        src/game/enemies.h
+        src/game/unitcomponents.h
 )
 
 target_link_libraries(game PRIVATE raylib)

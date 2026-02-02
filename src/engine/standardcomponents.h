@@ -2,7 +2,11 @@
 #define GAME_STANDARDCOMPONENTS_H
 
 #include "ecs.h"
+#include "event.h"
 #include "vec.h"
+
+#include "resource.h"
+#include "Universe.h"
 
 struct Transform2d : Component<Transform2d> {
     COMPONENT_STORAGE(Transform2d);
@@ -130,6 +134,10 @@ struct CollisionRect : Component<CollisionRect> {
         return *this;
     }
 
+    [[nodiscard]] constexpr bool layerOverlapWithMask(const std::uint32_t m) const {
+        return (layer & m) != 0;
+    }
+
     [[nodiscard]] constexpr bool isOnLayer(const std::uint32_t l) const {
         return (layer & (1u << l)) != 0;
     }
@@ -146,6 +154,16 @@ struct CollisionRect : Component<CollisionRect> {
             dimensions.y,
         };
     }
+};
+
+struct ColliderOverlapEvent : Event<ColliderOverlapEvent> {
+    EVENT_STORAGE(ColliderOverlapEvent);
+
+    Entity a;
+    Entity b;
+
+    CollisionRect* cA;
+    CollisionRect* cB;
 };
 
 namespace StandardComponentSystems {
@@ -186,14 +204,43 @@ namespace StandardComponentSystems {
         DrawRectangleLinesEx(collisionRect.makeRect(trans.position), 2.0f, RED);
     }
 
+    inline void checkColliderOverlap(const Entity a, CollisionRect& cRect, const Transform2d& trans) {
+        // TODO, obviously dont check collision with EVERYTHING!!! (perhaps use spatial hashing again? octrees?)
+        ECS::query<CollisionRect, Transform2d>([&](const Entity b, CollisionRect& rect2, const Transform2d& trans2) {
+            if (a.id == b.id) return;
+            if (!rect2.layerOverlapWithMask(cRect.mask)) return; // perhaps layers and masks should just be components.
+
+            if (CheckCollisionRecs(cRect.makeRect(trans.position), rect2.makeRect(trans2.position))) {
+                ColliderOverlapEvent evt = {
+                    .a = a,
+                    .b = b,
+                    .cA = &cRect,
+                    .cB = &rect2,
+                };
+                evt.send();
+            }
+        });
+    }
+
     inline void registerAll() {
         Universe::onUpdate.registerSystem<FadeOverTime, Sprite>(fadeOverTime);
         Universe::onUpdate.registerSystem<ConstantForce, Velocity>(applyConstantForce);
         Universe::onUpdate.registerSystem<Transient>(removeTransient);
+        Universe::onUpdate.registerSystem<CollisionRect, Transform2d>(checkColliderOverlap);
     }
 
     inline void enableDebugRendering() {
         Universe::onLateRender2d.registerSystem<CollisionRect, Transform2d>(debugDrawCollisionRects);
+    }
+}
+
+namespace RenderingSystems {
+    inline void renderSprites(const Entity, const Sprite& sprite, const Transform2d& trans) {
+        sprite.texture->renderEx(trans.position, sprite.offset, trans.rotation, trans.scale, sprite.tint);
+    }
+
+    inline void registerAll() {
+        Universe::onRender2d.registerSystem<Sprite, Transform2d>(renderSprites);
     }
 }
 
