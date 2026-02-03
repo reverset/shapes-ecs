@@ -22,6 +22,7 @@ namespace Enemies {
             .addComponent(Sprite(sprite))
             .addComponent(CollisionRect(16, 16, BitLayers::ENEMY_LAYER, BitLayers::NONE))
             .addComponent(Health(50))
+            .addComponent(HealthBar())
             .getEntity();
     }
 }

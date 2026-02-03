@@ -74,10 +74,6 @@ void playerMovement(const Entity, const Player&, Transform2d& trans) {
 
     static constexpr int SPEED = 100;
     trans.position += movDelta * (Universe::getScaledDeltaTime() * SPEED);
-
-    if (IsKeyPressed(KEY_L)) {
-        Particles::sparkle(trans.position + Vec2{50, 0});
-    }
 }
 
 Entity spawnBullet(const Entity attacker, const std::uint32_t baseDamage, const Vec2 pos, const Vec2 vel, const float hitboxScale, const BitLayers::Type mask, const std::string& spriteName = "bullet") {
@@ -99,7 +95,7 @@ void playerAttackControl(const Entity e, Player& player, const Transform2d& tran
 
     auto& weapon = player.heldWeapon;
 
-    if (weapon.lastFiredTimestamp.hasElasped(weapon.cooldownTime)
+    if (weapon.lastFiredTimestamp.hasElapsed(weapon.cooldownTime)
         && Universe::getInputManager()->testBooleanBind(KeyboardAndMouse, "shoot")) {
 
         weapon.lastFiredTimestamp = Timestamp::now();
@@ -146,7 +142,6 @@ void handleBulletHitUnit(const ColliderOverlapEvent& event) {
     ECS::queryComponentsFor<Bullet>(event.a, [&](const Entity bullet, const Bullet& bulletInfo) {
         ECS::queryComponentsFor<Health>(event.b, [&](const Entity, Health& health) {
             health.damage(bulletInfo.baseDamage);
-            Logging::log("HIT!! for %d, health left: %d", bulletInfo.baseDamage, health.health);
         });
 
         Universe::getEntityStorage().destroyEntity(bullet);
@@ -236,6 +231,7 @@ int main() {
         RenderingSystems::registerAll();
         StandardComponentSystems::registerAll();
         TilemapSystems::registerAll();
+        UnitComponents::registerAll();
         // StandardComponentSystems::enableDebugRendering();
 
         Universe::onUpdate

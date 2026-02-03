@@ -84,7 +84,7 @@ struct Timestamp {
         return Timestamp(Universe::getGameTime());
     }
 
-    [[nodiscard]] bool hasElasped(const Duration dur) const {
+    [[nodiscard]] bool hasElapsed(const Duration dur) const {
         return Universe::getGameTime() > start + dur.toSeconds();
     }
 
