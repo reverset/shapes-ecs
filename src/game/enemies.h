@@ -1,16 +1,17 @@
 #ifndef GAME_ENEMIES_H
 #define GAME_ENEMIES_H
 
+#include <tuple>
+
 #include "unitcomponents.h"
 #include "../engine/ecs.h"
 #include "../engine/standardcomponents.h"
 #include "../engine/Universe.h"
 #include "../engine/vec.h"
+#include "../engine/tilemap.h"
 
 struct Meanie : Component<Meanie> {
     COMPONENT_STORAGE(Meanie);
-
-
 };
 
 namespace Enemies {
@@ -24,6 +25,29 @@ namespace Enemies {
             .addComponent(Health(50))
             .addComponent(HealthBar())
             .getEntity();
+    }
+
+    inline void meanieThink(const Entity e, const Meanie&, Transform2d& trans) {
+        const auto playerQuery = ECS::findOneOf<Player, Transform2d>();
+        if (!playerQuery.has_value()) {
+            Logging::logWarn("Player is missing!");
+            return;
+        }
+
+        // TODO delay!! lmao
+        const Transform2d* playerPos = std::get<1>(*playerQuery);
+        const Vec2 vel = (playerPos->position - trans.position).normalizeOrZero()*100;
+
+        Universe::defer([=] {
+            const auto bullet = Spawning::spawnBullet(e, 2, trans.position, vel, 1.0f, BitLayers::PLAYER_LAYER);
+            Universe::getEntityStorage().insertComponent(bullet, TilemapCollider(8, 8));
+        });
+
+        // trans.position = trans.position.lerp(playerPos->position, Universe::getScaledDeltaTime());
+    }
+
+    inline void registerAll() {
+        Universe::onUpdate.registerSystem<Meanie, Transform2d>(meanieThink);
     }
 }
 

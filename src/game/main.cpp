@@ -11,41 +11,13 @@
 #include "../engine/timer.h"
 #include "../engine/Files.h"
 #include "particles.h"
+#include "unitcomponents.h"
 
 #include "../engine/standardcomponents.h"
 #include "../engine/tilemap.h"
 
-struct Weapon {
-    Timestamp lastFiredTimestamp = Timestamp::longAgo();
-    Duration cooldownTime{};
-
-    explicit Weapon(const Duration cooldownTime) {
-        this->cooldownTime = cooldownTime;
-    }
-};
-
-struct Player : Component<Player> {
-    COMPONENT_STORAGE(Player);
-
-    Weapon heldWeapon{Duration::ofSeconds(0.2)};
-};
-
 struct WeaponHud : Component<WeaponHud> {
     COMPONENT_STORAGE(WeaponHud);
-};
-
-struct Bullet : Component<Bullet> {
-    COMPONENT_STORAGE(Bullet);
-
-    Entity attacker{};
-    std::uint32_t baseDamage;
-
-    Bullet() = delete;
-
-    explicit Bullet(const Entity attacker, const std::uint32_t baseDamage) {
-        this->attacker = attacker;
-        this->baseDamage = baseDamage;
-    }
 };
 
 void defineKeybindings() {
@@ -76,20 +48,6 @@ void playerMovement(const Entity, const Player&, Transform2d& trans) {
     trans.position += movDelta * (Universe::getScaledDeltaTime() * SPEED);
 }
 
-Entity spawnBullet(const Entity attacker, const std::uint32_t baseDamage, const Vec2 pos, const Vec2 vel, const float hitboxScale, const BitLayers::Type mask, const std::string& spriteName = "bullet") {
-    const auto sprite = *Universe::getResourceManager()->getResource<TextureResource>(spriteName);
-
-    auto& store = Universe::getEntityStorage();
-    return store.makeEntity()
-        .addComponent(Sprite(sprite))
-        .addComponent(Transform2d(pos, vel.toAngle(), 0.8f))
-        .addComponent(Bullet(attacker, baseDamage))
-        .addComponent(Velocity(vel))
-        .addComponent(Transient{Duration::ofSeconds(1.0)})
-        .addComponent(CollisionRect(16 * hitboxScale, 16 * hitboxScale, BitLayers::NONE, mask))
-        .getEntity();
-}
-
 void playerAttackControl(const Entity e, Player& player, const Transform2d& trans) {
     constexpr double BULLET_SPEED = 200.0;
 
@@ -105,7 +63,7 @@ void playerAttackControl(const Entity e, Player& player, const Transform2d& tran
         const auto vel = direction * BULLET_SPEED;
 
         Universe::defer([=] {
-            const auto bullet = spawnBullet(e, 10, trans.position, vel, 1.0f, BitLayers::ENEMY_LAYER);
+            const auto bullet = Spawning::spawnBullet(e, 10, trans.position, vel, 1.0f, BitLayers::ENEMY_LAYER);
             Universe::getEntityStorage().insertComponent(bullet, TilemapCollider(8, 8));
         });
     }
@@ -231,6 +189,7 @@ int main() {
         RenderingSystems::registerAll();
         StandardComponentSystems::registerAll();
         TilemapSystems::registerAll();
+        Enemies::registerAll();
         UnitComponents::registerAll();
         // StandardComponentSystems::enableDebugRendering();
 

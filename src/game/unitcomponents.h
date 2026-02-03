@@ -9,6 +9,35 @@
 #include "../engine/logging.h"
 #include "../engine/util.h"
 
+struct Weapon {
+    Timestamp lastFiredTimestamp = Timestamp::longAgo();
+    Duration cooldownTime{};
+
+    explicit Weapon(const Duration cooldownTime) {
+        this->cooldownTime = cooldownTime;
+    }
+};
+
+struct Player : Component<Player> {
+    COMPONENT_STORAGE(Player);
+
+    Weapon heldWeapon{Duration::ofSeconds(0.2)};
+};
+
+struct Bullet : Component<Bullet> {
+    COMPONENT_STORAGE(Bullet);
+
+    Entity attacker{};
+    std::uint32_t baseDamage;
+
+    Bullet() = delete;
+
+    explicit Bullet(const Entity attacker, const std::uint32_t baseDamage) {
+        this->attacker = attacker;
+        this->baseDamage = baseDamage;
+    }
+};
+
 struct Health : Component<Health> {
     COMPONENT_STORAGE(Health);
 
@@ -41,6 +70,22 @@ struct HealthBar : Component<HealthBar> {
 
     float damageBarProgress = 1.0f;
 };
+
+namespace Spawning {
+    Entity spawnBullet(const Entity attacker, const std::uint32_t baseDamage, const Vec2 pos, const Vec2 vel, const float hitboxScale, const BitLayers::Type mask, const std::string& spriteName = "bullet") {
+        const auto sprite = *Universe::getResourceManager()->getResource<TextureResource>(spriteName);
+
+        auto& store = Universe::getEntityStorage();
+        return store.makeEntity()
+            .addComponent(Sprite(sprite))
+            .addComponent(Transform2d(pos, vel.toAngle(), 0.8f))
+            .addComponent(Bullet(attacker, baseDamage))
+            .addComponent(Velocity(vel))
+            .addComponent(Transient{Duration::ofSeconds(1.0)})
+            .addComponent(CollisionRect(16 * hitboxScale, 16 * hitboxScale, BitLayers::NONE, mask))
+            .getEntity();
+    }
+}
 
 namespace UnitComponents {
     inline void renderHealthBars(const Entity, HealthBar& bar, const Health& health, const Transform2d& trans) {
