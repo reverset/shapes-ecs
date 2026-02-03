@@ -2,23 +2,23 @@
 #define GAME_TIMER_H
 
 struct Duration {
-    std::uint64_t millis;
+    std::uint64_t millis = 0;
 
-    static Duration ofSeconds(const double seconds) {
+    static constexpr Duration ofSeconds(const double seconds) {
         return Duration(static_cast<std::uint64_t>(seconds * 1000));
     }
 
-    [[nodiscard]] double toSeconds() const {
+    [[nodiscard]] constexpr double toSeconds() const {
         return static_cast<double>(millis) / 1000.0;
     }
 
-    [[nodiscard]] std::uint64_t toMillis() const {
+    [[nodiscard]] constexpr std::uint64_t toMillis() const {
         return millis;
     }
 
-    explicit Duration() = default;
+    constexpr explicit Duration() = default;
 
-    explicit Duration(const std::uint64_t millis) {
+    constexpr explicit Duration(const std::uint64_t millis) {
         this->millis = millis;
     }
 };

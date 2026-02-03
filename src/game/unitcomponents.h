@@ -44,7 +44,7 @@ struct HealthBar : Component<HealthBar> {
 
 namespace UnitComponents {
     inline void renderHealthBars(const Entity, HealthBar& bar, const Health& health, const Transform2d& trans) {
-        const auto damageCatchupWithHealthDelay = Duration::ofSeconds(0.5);
+        constexpr auto damageCatchupWithHealthDelay = Duration::ofSeconds(0.5);
         constexpr float damageCatchupSpeed = 1.2f;
         
         // background setup for healthbar
