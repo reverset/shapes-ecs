@@ -38,6 +38,11 @@ struct ComponentStorage {
     std::vector<Entity> entities;
     std::unordered_map<Entity, std::size_t> sparse;
 
+    static Logging::Logger& getLogger() {
+        static auto logger = NEW_LOGGER(ComponentStorage);
+        return logger;
+    }
+
     [[nodiscard]] std::size_t size() const {
 #ifndef NDEBUG
         if (dense.size() != entities.size() || entities.size() != sparse.size()) {
@@ -47,15 +52,17 @@ struct ComponentStorage {
         return dense.size();
     }
 
-    bool contains(const Entity e) const {
+    [[nodiscard]] bool contains(const Entity e) const {
         return sparse.contains(e);
     }
 
-    T& get(const Entity e) {
+    // call contains before this
+    [[nodiscard]] T& get(const Entity e) {
         if (const auto loc = sparse.find(e); loc != sparse.end()) {
             return dense[loc->second];
         }
 
+        getLogger().logError("called get(Entity=%zu). No such entity.", e.id);
         throw std::out_of_range("Entity not found!");
     }
 
@@ -67,7 +74,7 @@ struct ComponentStorage {
 
     void remove(const Entity e) {
         if (!sparse.contains(e)) {
-            Logging::logWarn("attempt to remove entity from component storage, when it never was present. id=%zu", e.id);
+            getLogger().logWarn("attempt to remove entity from component storage, when it never was present. id=%zu", e.id);
             return;
         }
 
@@ -268,6 +275,57 @@ public:
         for (auto& c : callbacks) {
             c();
         }
+    }
+};
+
+// DUPLICATE CODE!@!!!! its ok tho
+class IrregularSchedule {
+    using Callback = std::function<void()>;
+
+    std::vector<Callback> callbacks;
+
+    std::size_t maxStepsPerTick = 20;
+    std::size_t progress = 0;
+
+    double tickDelay = 0;
+    double lastTick = 0;
+public:
+
+    explicit IrregularSchedule() = default;
+
+    explicit IrregularSchedule(const std::size_t maxStepsPerTick, const double tickDelay) {
+        this->maxStepsPerTick = maxStepsPerTick;
+        this->tickDelay = tickDelay;
+    }
+
+    template <typename First, typename... Rest, typename Func>
+    IrregularSchedule& registerSystem(Func&& f) {
+        const auto sys = ECS::createCallableSystem<First, Rest...>(f);
+        callbacks.push_back(sys);
+
+        return *this;
+    }
+
+    IrregularSchedule& registerCallable(const Callback& f) {
+        callbacks.push_back(f);
+        return *this;
+    }
+
+    void tick(const double time) {
+        if (lastTick + tickDelay > time) return;
+        lastTick = time;
+
+        std::size_t i = 0;
+        for (; i < maxStepsPerTick; ++i) {
+            if (i >= callbacks.size()) {
+                progress = 0;
+                return;
+            }
+
+            callbacks[progress + i]();
+        }
+
+        progress += i;
     }
 };
 

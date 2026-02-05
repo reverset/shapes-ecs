@@ -16,6 +16,8 @@ namespace Universe {
     inline Schedule onUpdate;
     inline Schedule onLateUpdate;
 
+    inline auto onIrregularUpdate = IrregularSchedule(5, 0.2);
+
     inline Schedule prepaint;
 
     inline Schedule onEarlyRender2d; // temporary solution until render ordering is implemented

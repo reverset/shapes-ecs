@@ -35,7 +35,7 @@ namespace Enemies {
             .getEntity();
     }
 
-    inline void meanieThink(const Entity e, Meanie& meanie, Transform2d& trans, Velocity& vel) {
+    inline void meanieThink(const Entity e, Meanie& meanie, const Transform2d& trans, Velocity& vel) {
         constexpr auto shootCooldownTime = Duration::ofSeconds(0.5);
 
         const auto playerQuery = ECS::findOneOf<Player, Transform2d>();
@@ -51,10 +51,10 @@ namespace Enemies {
         if (meanie.lastShootTime.hasElapsed(shootCooldownTime)) {
             meanie.lastShootTime = Timestamp::now();
 
-            const Vec2 vel = directionToPlayer.normalizeOrZero()*100;
+            const Vec2 desiredVel = directionToPlayer.normalizeOrZero()*100;
             
             Universe::defer([=] {
-                const auto bullet = Spawning::spawnBullet(e, 2, trans.position, vel, 1.0f, BitLayers::PLAYER_LAYER, "bullet", RED);
+                const auto bullet = Spawning::spawnBullet(e, 2, trans.position, desiredVel, 1.0f, BitLayers::PLAYER_LAYER, "bullet", RED);
                 Universe::getEntityStorage().insertComponent(bullet, TilemapCollider(8, 8));
             });
         }
@@ -69,7 +69,8 @@ namespace Enemies {
     }
 
     inline void registerAll() {
-        Universe::onUpdate.registerSystem<Meanie, Transform2d, Velocity>(meanieThink);
+        Universe::onIrregularUpdate
+            .registerSystem<Meanie, Transform2d, Velocity>(meanieThink);
     }
 }
 

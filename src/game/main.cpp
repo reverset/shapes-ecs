@@ -17,10 +17,6 @@
 #include "../engine/standardcomponents.h"
 #include "../engine/tilemap.h"
 
-struct WeaponHud : Component<WeaponHud> {
-    COMPONENT_STORAGE(WeaponHud);
-};
-
 void defineKeybindings() {
     const auto input = Universe::getInputManager();
     // TODO, deadzone
@@ -33,13 +29,6 @@ void defineKeybindings() {
         .keyboard = [] { return IsMouseButtonDown(MOUSE_BUTTON_LEFT); },
         .gamepad = [](const int id) { return GetGamepadAxisMovement(id, GAMEPAD_AXIS_RIGHT_TRIGGER) > 0.5f; },
     });
-}
-
-void renderWeaponHud(const Entity, const WeaponHud&, const Transform2d& trans) {
-    DrawRectangleRounded(Rectangle{
-                         static_cast<float>(Universe::getResolutionX()) - trans.position.x,
-                         static_cast<float>(Universe::getResolutionY()) - trans.position.y, 50 * trans.scale, 50 * trans.scale
-                     }, 0.5f, 8, RED);
 }
 
 void playerMovement(const Entity, const Player&, Transform2d& trans) {
@@ -178,8 +167,6 @@ int main() {
         // Universe::onEarlyRender2d
         //     .registerSystem<Tilemap, Transform2d>(TilemapSystems::renderTilemapsChunked);
 
-        Universe::onRenderUi.registerSystem<WeaponHud, Transform2d>(renderWeaponHud);
-
         TilemapCollisionEvent::listen(handleBulletHitTile);
         ColliderOverlapEvent::listen(handleBulletHitUnit);
 
@@ -197,11 +184,9 @@ int main() {
             .addComponent(TilemapCollider(16, 16))
             .addComponent(CollisionRect(16, 16, BitLayers::PLAYER_LAYER, BitLayers::NONE));
 
-        es.makeEntity()
-            .addComponent(WeaponHud())
-            .addComponent(Transform2d({100, 100}));
-
-        Enemies::spawnMeanie({120, 12});
+        for (float i = 0; i < 20; i += 1) {
+            Enemies::spawnMeanie({120, 6 + (i*16)});
+        }
     }, [] {});
     // }, [] {});
 

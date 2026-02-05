@@ -87,6 +87,8 @@ namespace Universe {
     void updateAll() {
         onUpdate.tick();
         onLateUpdate.tick();
+
+        onIrregularUpdate.tick(getGameTime());
     }
 
     void deInit(const std::function<void()>& stop) {

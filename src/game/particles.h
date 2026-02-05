@@ -18,7 +18,9 @@ namespace Particles {
 
         constexpr std::size_t particles = 4;
         for (std::size_t i = 0; i < particles; i++) {
-            const auto lifetime = Duration::ofSeconds(1.0);
+            constexpr auto lifetime = Duration::ofSeconds(1.0);
+
+
             Universe::getEntityStorage()
                 .makeEntity()
                     .addComponent(Transform2d(pos + Vec2::randomDirection(3)))
