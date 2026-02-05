@@ -31,6 +31,7 @@ namespace Enemies {
             .addComponent(Health(50))
             .addComponent(HealthBar())
             .addComponent(Velocity())
+            .addComponent(RemoveOnDeath())
             .getEntity();
     }
 

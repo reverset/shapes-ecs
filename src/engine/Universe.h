@@ -24,6 +24,7 @@ namespace Universe {
 
     inline Schedule onRenderUi;
 
+    inline Schedule onFinalFrameUpdate;
     inline Schedule onDeInit;
 
     EntityStorage& getEntityStorage();

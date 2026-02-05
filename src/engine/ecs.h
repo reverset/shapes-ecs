@@ -13,6 +13,8 @@
 
 #define COMPONENT_STORAGE(type) static ComponentStorage<type>& getStoreStatically() { static ComponentStorage<type> store; return store; } ComponentStorage<type>* getComponentStorage() override { return &getStoreStatically(); }
 
+#define MARKER_COMPONENT(name) struct name : Component<name> { COMPONENT_STORAGE(name); }
+
 class EntityStorage;
 
 struct Entity {
@@ -195,21 +197,21 @@ namespace ECS {
     }
 
     template <typename First, typename... Rest, typename Func>
-    std::function<void()> createCallableSystem(Func&& f) {
+    [[nodiscard]] std::function<void()> createCallableSystem(Func&& f) {
         return [&] {
             ECS::query<First, Rest...>(f);
         };
     }
 
     template <typename ... Funcs>
-    std::function<void()> chain(Funcs&&... f) {
+    [[nodiscard]] std::function<void()> chain(Funcs&&... f) {
         return [f...] {
               (f(), ...);
         };
     }
 
     template <typename First, typename ... Rest>
-    std::optional<std::tuple<First*, Rest*...>> findOneOf() {
+    [[nodiscard]] std::optional<std::tuple<First*, Rest*...>> findOneOf() {
         std::optional<std::tuple<First*, Rest*...>> res;
 
         // duplicated code... but its ok
@@ -227,7 +229,7 @@ namespace ECS {
     }
 
     template <typename First, typename... Rest> // perhaps make a pointer version?
-    std::vector<std::tuple<First, Rest...>> collect() {
+    [[nodiscard]] std::vector<std::tuple<First, Rest...>> collect() {
         std::vector<std::tuple<First, Rest...>> res;
 
         ECS::query<First, Rest...>([&](const Entity, First& f, Rest&... r) {
@@ -235,6 +237,11 @@ namespace ECS {
         });
 
         return res;
+    }
+
+    template <typename... Rest>
+    [[nodiscard]] bool hasComponents(const Entity e) {
+        return (Rest::getStoreStatically().contains(e) && ...);
     }
 }
 

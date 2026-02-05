@@ -53,6 +53,8 @@ namespace Universe {
     }
 
     void runDeferred() {
+        onFinalFrameUpdate.tick();
+
         while (!deferredActions.empty()) {
             auto last = deferredActions.back();
             deferredActions.pop_back();

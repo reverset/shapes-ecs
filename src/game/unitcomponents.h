@@ -56,10 +56,17 @@ struct Health : Component<Health> {
         lastDamage = Timestamp::now();
     }
 
+    [[nodiscard]] bool isDead() const {
+        return health <= 0;
+    }
+
     [[nodiscard]] float getHealthNormalized() const {
         return static_cast<float>(health) / static_cast<float>(maxHealth);
     }
 };
+
+MARKER_COMPONENT(RemoveOnDeath);
+MARKER_COMPONENT(DeathMarker);
 
 struct HealthBar : Component<HealthBar> {
     COMPONENT_STORAGE(HealthBar);
@@ -71,8 +78,16 @@ struct HealthBar : Component<HealthBar> {
     float damageBarProgress = 1.0f;
 };
 
+
+// this event should only be invoked in a deferred context! (at the end of the frame)
+struct DeathEvent : Event<DeathEvent> {
+    EVENT_STORAGE(DeathEvent);
+
+    Entity victim;
+};
+
 namespace Spawning {
-    Entity spawnBullet(const Entity attacker, const std::uint32_t baseDamage, const Vec2 pos, const Vec2 vel, const float hitboxScale, const BitLayers::Type mask, const std::string& spriteName = "bullet", const Color tint = WHITE) {
+    inline Entity spawnBullet(const Entity attacker, const std::uint32_t baseDamage, const Vec2 pos, const Vec2 vel, const float hitboxScale, const BitLayers::Type mask, const std::string& spriteName = "bullet", const Color tint = WHITE) {
         constexpr auto lifetime = Duration::ofSeconds(2.0);
         constexpr auto beginFadeOffset = Duration::ofSeconds(1.0);
         constexpr auto fadeTime = lifetime - beginFadeOffset;
@@ -95,7 +110,7 @@ namespace Spawning {
 namespace UnitComponents {
     inline void renderHealthBars(const Entity, HealthBar& bar, const Health& health, const Transform2d& trans) {
         constexpr auto damageCatchupWithHealthDelay = Duration::ofSeconds(0.5);
-        constexpr float damageCatchupSpeed = 1.2f;
+        constexpr float damageCatchupSpeed = 2.0f;
         
         // background setup for healthbar
         const float x = trans.position.x - (bar.width * 0.5f);
@@ -135,8 +150,37 @@ namespace UnitComponents {
         DrawRectangleRounded(healthBar, 0.8, 4, RED);
     }
 
+    inline void deathEventEmitter(const Entity e, const Health& health) {
+        if (ECS::hasComponents<DeathMarker>(e)) return; // TODO, improve queries for systems to have something like Not<DeathMarker>
+
+        if (health.isDead()) {
+            Universe::getEntityStorage()
+                .insertComponent<DeathMarker>(e, DeathMarker());
+
+
+            Universe::defer([e] {
+                DeathEvent evt = {
+                    .victim = e,
+                };
+                evt.send();
+            });
+        }
+    }
+
+    inline void removeDead(const Entity e, const RemoveOnDeath&, const DeathMarker&) {
+        Universe::getEntityStorage()
+            .destroyEntity(e);
+    }
+
     inline void registerAll() {
-        Universe::onLateRender2d.registerSystem<HealthBar, Health, Transform2d>(renderHealthBars);
+        Universe::onUpdate
+            .registerSystem<Health>(deathEventEmitter);
+
+        Universe::onLateRender2d
+            .registerSystem<HealthBar, Health, Transform2d>(renderHealthBars);
+
+        Universe::onFinalFrameUpdate
+            .registerSystem<RemoveOnDeath, DeathMarker>(removeDead);
     }
 }
 
