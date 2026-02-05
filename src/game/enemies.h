@@ -26,13 +26,15 @@ namespace Enemies {
             .addComponent(Meanie())
             .addComponent(Transform2d(pos))
             .addComponent(Sprite(sprite))
+            .addComponent(TilemapCollider(16, 16))
             .addComponent(CollisionRect(16, 16, BitLayers::ENEMY_LAYER, BitLayers::NONE))
             .addComponent(Health(50))
             .addComponent(HealthBar())
+            .addComponent(Velocity())
             .getEntity();
     }
 
-    inline void meanieThink(const Entity e, Meanie& meanie, Transform2d& trans) {
+    inline void meanieThink(const Entity e, Meanie& meanie, Transform2d& trans, Velocity& vel) {
         constexpr auto shootCooldownTime = Duration::ofSeconds(0.5);
 
         const auto playerQuery = ECS::findOneOf<Player, Transform2d>();
@@ -40,13 +42,15 @@ namespace Enemies {
             Logging::logWarn("Player is missing!");
             return;
         }
+    
+        const Transform2d* playerPos = std::get<1>(*playerQuery);
+        const auto directionToPlayer = (playerPos->position - trans.position).normalizeOrZero();
 
         // shooting
         if (meanie.lastShootTime.hasElapsed(shootCooldownTime)) {
             meanie.lastShootTime = Timestamp::now();
 
-            const Transform2d* playerPos = std::get<1>(*playerQuery);
-            const Vec2 vel = (playerPos->position - trans.position).normalizeOrZero()*100;
+            const Vec2 vel = directionToPlayer.normalizeOrZero()*100;
             
             Universe::defer([=] {
                 const auto bullet = Spawning::spawnBullet(e, 2, trans.position, vel, 1.0f, BitLayers::PLAYER_LAYER, "bullet", RED);
@@ -54,11 +58,17 @@ namespace Enemies {
             });
         }
 
-        // trans.position = trans.position.lerp(playerPos->position, Universe::getScaledDeltaTime());
+        // moving
+        if (meanie.lastMoveTime.hasElapsed(meanie.moveInterval)) {
+            meanie.lastMoveTime = Timestamp::now();
+            meanie.moveInterval = Duration::ofSeconds(RandomGen::randomFloat(0.2f, 2.0f));
+
+            vel.velocity = (playerPos->position + Vec2::randomDirection(20.0f) - trans.position).resize(50.0f);
+        }
     }
 
     inline void registerAll() {
-        Universe::onUpdate.registerSystem<Meanie, Transform2d>(meanieThink);
+        Universe::onUpdate.registerSystem<Meanie, Transform2d, Velocity>(meanieThink);
     }
 }
 

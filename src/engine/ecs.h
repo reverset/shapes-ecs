@@ -212,10 +212,16 @@ namespace ECS {
     std::optional<std::tuple<First*, Rest*...>> findOneOf() {
         std::optional<std::tuple<First*, Rest*...>> res;
 
-        // TODO: this will still iterate through multiple entities
-        ECS::query<First, Rest...>([&](const Entity, First& val, Rest&... val2) {
-            res = std::make_tuple(&val, &val2...);
-        });
+        // duplicated code... but its ok
+        ComponentStorage<First>& firstStore = First::getStoreStatically();
+
+        for (std::size_t i = 0; i < firstStore.size(); ++i) {
+            if (const auto entity = firstStore.entities[i]; (Rest::getStoreStatically().contains(entity) && ...)) {
+                res = std::make_tuple(&firstStore.dense[i], &Rest::getStoreStatically().get(entity)...);
+
+                break; // break since we found a desirable entity, and we only needed one.
+            }
+        }
 
         return res;
     }
