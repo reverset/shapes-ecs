@@ -36,18 +36,18 @@ namespace GameUtil {
 
 
     template <typename T>
-    [[nodiscard]] T clamp(T val, T min, T max) {
+    [[nodiscard]] constexpr T clamp(T val, T min, T max) {
         return std::min(std::max(val, min), max);
     }
 
     template <typename T>
-    [[nodiscard]] T moveTowards(T val, T target, T delta) {
+    [[nodiscard]] constexpr T moveTowards(T val, T target, T delta) {
         T actualDelta = std::min(delta, std::abs(target - val));
         return val + std::copysign(actualDelta, target - val);
     }
 
     template <typename T>
-    [[nodiscard]] T lerp(T val, T target, T delta) {
+    [[nodiscard]] constexpr T lerp(T val, T target, T delta) {
         return val + (target - val) * delta;
     }
 }

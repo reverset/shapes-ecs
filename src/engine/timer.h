@@ -8,6 +8,10 @@ struct Duration {
         return Duration(static_cast<std::uint64_t>(seconds * 1000));
     }
 
+    static constexpr Duration zero() {
+        return Duration(0);
+    }
+
     [[nodiscard]] constexpr double toSeconds() const {
         return static_cast<double>(millis) / 1000.0;
     }

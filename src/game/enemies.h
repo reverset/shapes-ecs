@@ -14,6 +14,9 @@ struct Meanie : Component<Meanie> {
     COMPONENT_STORAGE(Meanie);
 
     Timestamp lastShootTime = Timestamp::longAgo();
+
+    Timestamp lastMoveTime = Timestamp::longAgo();
+    Duration moveInterval = Duration::zero();
 };
 
 namespace Enemies {
@@ -38,6 +41,7 @@ namespace Enemies {
             return;
         }
 
+        // shooting
         if (meanie.lastShootTime.hasElapsed(shootCooldownTime)) {
             meanie.lastShootTime = Timestamp::now();
 

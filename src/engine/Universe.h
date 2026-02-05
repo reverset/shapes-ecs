@@ -74,7 +74,7 @@ struct Timestamp {
         start = time;
     }
 
-    [[nodiscard]] static Timestamp longAgo() {
+    [[nodiscard]] constexpr static Timestamp longAgo() {
         return Timestamp(
             std::numeric_limits<double>::lowest()
         );
