@@ -12,6 +12,8 @@
 
 struct Meanie : Component<Meanie> {
     COMPONENT_STORAGE(Meanie);
+
+    Timestamp lastShootTime = Timestamp::longAgo();
 };
 
 namespace Enemies {
@@ -27,21 +29,26 @@ namespace Enemies {
             .getEntity();
     }
 
-    inline void meanieThink(const Entity e, const Meanie&, Transform2d& trans) {
+    inline void meanieThink(const Entity e, Meanie& meanie, Transform2d& trans) {
+        constexpr auto shootCooldownTime = Duration::ofSeconds(0.5);
+
         const auto playerQuery = ECS::findOneOf<Player, Transform2d>();
         if (!playerQuery.has_value()) {
             Logging::logWarn("Player is missing!");
             return;
         }
 
-        // TODO delay!! lmao
-        const Transform2d* playerPos = std::get<1>(*playerQuery);
-        const Vec2 vel = (playerPos->position - trans.position).normalizeOrZero()*100;
+        if (meanie.lastShootTime.hasElapsed(shootCooldownTime)) {
+            meanie.lastShootTime = Timestamp::now();
 
-        Universe::defer([=] {
-            const auto bullet = Spawning::spawnBullet(e, 2, trans.position, vel, 1.0f, BitLayers::PLAYER_LAYER);
-            Universe::getEntityStorage().insertComponent(bullet, TilemapCollider(8, 8));
-        });
+            const Transform2d* playerPos = std::get<1>(*playerQuery);
+            const Vec2 vel = (playerPos->position - trans.position).normalizeOrZero()*100;
+            
+            Universe::defer([=] {
+                const auto bullet = Spawning::spawnBullet(e, 2, trans.position, vel, 1.0f, BitLayers::PLAYER_LAYER, "bullet", RED);
+                Universe::getEntityStorage().insertComponent(bullet, TilemapCollider(8, 8));
+            });
+        }
 
         // trans.position = trans.position.lerp(playerPos->position, Universe::getScaledDeltaTime());
     }

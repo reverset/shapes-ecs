@@ -95,6 +95,10 @@ struct Timestamp {
             1.0
         );
     }
+
+    [[nodiscard]] Timestamp shift(const Duration dur) const {
+        return Timestamp (start + dur.toSeconds());
+    }
 };
 
 #endif //GAME_UNIVERSE_H

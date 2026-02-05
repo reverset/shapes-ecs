@@ -72,16 +72,21 @@ struct HealthBar : Component<HealthBar> {
 };
 
 namespace Spawning {
-    Entity spawnBullet(const Entity attacker, const std::uint32_t baseDamage, const Vec2 pos, const Vec2 vel, const float hitboxScale, const BitLayers::Type mask, const std::string& spriteName = "bullet") {
+    Entity spawnBullet(const Entity attacker, const std::uint32_t baseDamage, const Vec2 pos, const Vec2 vel, const float hitboxScale, const BitLayers::Type mask, const std::string& spriteName = "bullet", const Color tint = WHITE) {
+        constexpr auto lifetime = Duration::ofSeconds(2.0);
+        constexpr auto beginFadeOffset = Duration::ofSeconds(1.0);
+        constexpr auto fadeTime = lifetime - beginFadeOffset;
+        
         const auto sprite = *Universe::getResourceManager()->getResource<TextureResource>(spriteName);
 
         auto& store = Universe::getEntityStorage();
         return store.makeEntity()
-            .addComponent(Sprite(sprite))
+            .addComponent(Sprite(sprite, tint))
             .addComponent(Transform2d(pos, vel.toAngle(), 0.8f))
             .addComponent(Bullet(attacker, baseDamage))
             .addComponent(Velocity(vel))
-            .addComponent(Transient{Duration::ofSeconds(1.0)})
+            .addComponent(Transient(lifetime))
+            .addComponent(FadeOverTime(fadeTime, beginFadeOffset))
             .addComponent(CollisionRect(16 * hitboxScale, 16 * hitboxScale, BitLayers::NONE, mask))
             .getEntity();
     }

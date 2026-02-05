@@ -21,6 +21,14 @@ struct Duration {
     constexpr explicit Duration(const std::uint64_t millis) {
         this->millis = millis;
     }
+
+    constexpr Duration operator+(const Duration other) const {
+        return Duration(millis + other.millis);
+    }
+
+    constexpr Duration operator-(const Duration other) const {
+        return Duration(millis - other.millis);
+    }
 };
 
 // class GameTimer {

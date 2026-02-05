@@ -44,7 +44,12 @@ struct Sprite : Component<Sprite> {
         this->offset = offset;
     }
 
-    explicit Sprite(TextureResource* texture, const Vec2 offset, const Color& tint) {
+    explicit Sprite(TextureResource* texture, const Color tint) {
+        this->texture = texture;
+        this->tint = tint;
+    }
+
+    explicit Sprite(TextureResource* texture, const Vec2 offset, const Color tint) {
         this->texture = texture;
         this->offset = offset;
         this->tint = tint;
@@ -56,9 +61,15 @@ struct FadeOverTime : Component<FadeOverTime> {
 
     Timestamp start = Timestamp::now();
     Duration fadeTime{};
+    Duration offset{};
 
     explicit FadeOverTime(const Duration dur) {
         this->fadeTime = dur;
+    }
+
+    explicit FadeOverTime(const Duration dur, const Duration offset) {
+        this->fadeTime = dur;
+        this->offset = offset;
     }
 };
 
@@ -188,8 +199,11 @@ namespace StandardComponentSystems {
     }
 
     inline void fadeOverTime(const Entity e, const FadeOverTime& time, Sprite& sprite) {
+        if (!time.start.hasElapsed(time.offset)) return;
+        
+        const Timestamp actualStartTime = time.start.shift(time.offset);
         sprite.tint = Fade(sprite.tint, 
-            static_cast<float>(1.0 - time.start.normalizedElapsed(time.fadeTime)));
+            static_cast<float>(1.0 - actualStartTime.normalizedElapsed(time.fadeTime)));
 
         if (sprite.tint.a >= 255) {
             Universe::defer([e] {
