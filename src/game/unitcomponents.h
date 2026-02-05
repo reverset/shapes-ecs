@@ -51,8 +51,8 @@ struct Health : Component<Health> {
         this->health = maxHealth;
     }
 
-    void damage(const std::int32_t dmg) { // todo damage struct
-        health = GameUtil::clamp(health - dmg, 0, maxHealth);
+    void damage(const std::uint32_t dmg) { // todo damage struct
+        health = GameUtil::clamp(health - static_cast<std::int32_t>(dmg), 0, maxHealth);
         lastDamage = Timestamp::now();
     }
 

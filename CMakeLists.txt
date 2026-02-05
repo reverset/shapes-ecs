@@ -35,6 +35,7 @@ add_executable(game
         src/engine/event.h
         src/game/enemies.h
         src/game/unitcomponents.h
+        src/game/assetstore.h
 )
 
 target_link_libraries(game PRIVATE raylib)

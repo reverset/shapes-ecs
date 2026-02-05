@@ -101,6 +101,11 @@ public:
 class ResourceManager {
     std::unordered_map<std::string, Resource*> resources;
 
+    static Logging::Logger& getLogger() {
+        static auto logger = NEW_LOGGER(ResourceManager);
+        return logger;
+    }
+
 public:
     void registerResource(const std::string& name, Resource* res) {
         res->load();
@@ -113,6 +118,9 @@ public:
         if (const auto it = resources.find(name); it != resources.end()) {
             return dynamic_cast<T*>(it->second);
         }
+
+        getLogger().logWarn("Resource not found: %s", name.c_str());
+
         return std::nullopt;
     }
 

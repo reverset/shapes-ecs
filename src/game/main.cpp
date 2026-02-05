@@ -2,6 +2,7 @@
 #include <iostream>
 
 
+#include "assetstore.h"
 #include "BitLayers.h"
 #include "enemies.h"
 #include "raylib.h"
@@ -110,8 +111,8 @@ void loadMap() {
     const auto man = Universe::getResourceManager();
     auto& es = Universe::getEntityStorage();
 
-    const auto grassTexture = *man->getResource<TextureResource>("grassTile");
-    const auto genericWallTexture = *man->getResource<TextureResource>("genericWall");
+    const auto grassTexture = AssetStore::getGrassTexture();
+    const auto genericWallTexture = AssetStore::getGenericWallTexture();
 
     auto map = Tilemap(100, 100, 16.0f, 3);
     // map.insertTile(0, Tile {
@@ -140,33 +141,6 @@ void loadMap() {
         .addComponent(Transform2d());
 }
 
-void loadResources() {
-    const auto man = Universe::getResourceManager();
-    man->registerResource(
-        "genericWall",
-        new TextureResource("genericWall.png"));
-
-    man->registerResource(
-        "player",
-        new TextureResource("player.png"));
-
-    man->registerResource(
-        "spark",
-        new TextureResource("spark.png"));
-
-    man->registerResource(
-        "bullet",
-        new TextureResource("bullet.png"));
-
-    man->registerResource(
-        "grassTile",
-        new TextureResource("grass.png"));
-
-    man->registerResource(
-        "meanie",
-        new TextureResource("meanie.png"));
-}
-
 int main() {
     // TODO update gamepad mapping for linux ... MIGHT BE MORE PROBLEMATIC THAN ANTICIPATED
 
@@ -178,8 +152,7 @@ int main() {
     // SetGamepadMappings(buffer.str().c_str());
 
     Universe::init(640, 360, "Game", [] {
-        const auto man = Universe::getResourceManager();
-        loadResources();
+        AssetStore::initialLoadAll();
 
         defineKeybindings();
 
@@ -210,7 +183,7 @@ int main() {
         TilemapCollisionEvent::listen(handleBulletHitTile);
         ColliderOverlapEvent::listen(handleBulletHitUnit);
 
-        const auto playerTexture = *man->getResource<TextureResource>("player");
+        const auto playerTexture = AssetStore::getPlayerTexture();
 
         auto& es = Universe::getEntityStorage();
 

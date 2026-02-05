@@ -14,7 +14,7 @@ namespace Particles {
             return;
         }
 
-        const auto sparkleTexture = *Universe::getResourceManager()->getResource<TextureResource>("spark");
+        const auto sparkleTexture = AssetStore::getSparkTexture();
 
         constexpr std::size_t particles = 4;
         for (std::size_t i = 0; i < particles; i++) {

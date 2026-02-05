@@ -21,7 +21,7 @@ struct Meanie : Component<Meanie> {
 
 namespace Enemies {
     inline Entity spawnMeanie(const Vec2 pos) {
-        const auto sprite = *Universe::getResourceManager()->getResource<TextureResource>("meanie");
+        const auto sprite = AssetStore::getMeanieTexture();
         return Universe::getEntityStorage().makeEntity()
             .addComponent(Meanie())
             .addComponent(Transform2d(pos))
