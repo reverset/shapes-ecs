@@ -50,6 +50,11 @@ namespace GameUtil {
     [[nodiscard]] constexpr T lerp(T val, T target, T delta) {
         return val + (target - val) * delta;
     }
+
+    template <typename T>
+    [[nodiscard]] constexpr bool isApprox(T lhs, T rhs, float epsilon = 0.000001f) {
+        return std::abs(lhs - rhs) < epsilon;
+    }
 }
 
 #endif //GAME_UTIL_H

@@ -38,7 +38,7 @@ struct Vec2ui {
 struct Vec2 {
     float x, y;
 
-    [[nodiscard]] static Vec2 zero() {
+    [[nodiscard]] static constexpr Vec2 zero() {
         return {0, 0};
     }
 
@@ -133,6 +133,19 @@ struct Vec2 {
 
     [[nodiscard]] constexpr float magnitude() const {
        return std::sqrt(dot(*this)) ;
+    }
+
+    [[nodiscard]] constexpr float magnitudeSquared() const {
+        return dot(*this);
+    }
+
+    [[nodiscard]] constexpr bool isApprox(const Vec2 other) const {
+        return GameUtil::isApprox(x, other.x)
+            && GameUtil::isApprox(y, other.y);
+    }
+
+    [[nodiscard]] constexpr bool isApproxZero() const {
+        return isApprox(zero());
     }
 
     [[nodiscard]] constexpr Vec2 normalizeOrZero() const {
