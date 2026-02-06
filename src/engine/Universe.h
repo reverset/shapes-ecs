@@ -36,7 +36,7 @@ namespace Universe {
 
     void defer(const std::function<void()>& f);
 
-    void init(int width, int height, const char* title, const std::function<void()>& start, const std::function<void()>& stop);
+    void init(int width, int height, const char* title, const std::function<void()>& start, const std::function<void()>& stop, int renderWidth = 640, int renderHeight = 360);
 
     int getResolutionX();
     int getResolutionY();
@@ -56,8 +56,30 @@ namespace Universe {
 
     Camera2D* getCamera();
 
+    [[nodiscard]] int getRenderResolutionWidth();
+    [[nodiscard]] int getRenderResolutionHeight();
+    [[nodiscard]] float getResolutionScalingFactor();
+
+    inline Vec2 getVirtualScreenPosition(const Vec2 screenPos) {
+        const float scale = getResolutionScalingFactor();
+
+        const auto width = static_cast<float>(GetScreenWidth());
+        const auto height = static_cast<float>(GetScreenHeight());
+
+        const auto renderWidth = static_cast<float>(getRenderResolutionWidth());
+        const auto renderHeight = static_cast<float>(getRenderResolutionHeight());
+
+        auto pos = Vec2{
+            (screenPos.x - (width - (renderWidth * scale)) * 0.5f) / scale,
+            (screenPos.y - (height - (renderHeight * scale)) * 0.5f) / scale,
+        };
+
+        pos = pos.clamp(Vec2::zero(), Vec2(renderWidth, renderHeight));
+        return pos;
+    }
+
     inline Vec2 getWorldPosition(const Vec2 v) {
-        return GetScreenToWorld2D(v, *getCamera());
+        return GetScreenToWorld2D(getVirtualScreenPosition(v), *getCamera());
     }
 
     inline Vec2 getMouseWorldPosition() {
@@ -68,6 +90,14 @@ namespace Universe {
     double getTimeScale();
 
     float getScaledDeltaTime();
+
+    [[nodiscard]] inline int getWindowWidth() {
+        return GetScreenWidth();
+    }
+
+    [[nodiscard]] inline int getWindowHeight() {
+        return GetScreenHeight();
+    }
 } // Universe
 
 struct Timestamp {

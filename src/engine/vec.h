@@ -116,6 +116,13 @@ struct Vec2 {
         return {std::fmod(x, other), std::fmod(y, other)};
     }
 
+    [[nodiscard]] constexpr Vec2 clamp(const Vec2 min, const Vec2 max) const {
+        return Vec2{
+            GameUtil::clamp(x, min.x, max.x),
+            GameUtil::clamp(y, min.y, max.y)
+        };
+    }
+
     [[nodiscard]] constexpr float toAngle() const {
         return std::atan2(y, x);
     }

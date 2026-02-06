@@ -1,6 +1,5 @@
 #include "Universe.h"
 
-#include <iostream>
 #include <vector>
 #include <functional>
 
@@ -13,6 +12,8 @@
 namespace Universe {
     std::vector<std::function<void()>> deferredActions;
 
+    RenderTexture2D screenTexture;
+
     EntityStorage entityStorage;
 
     EntityStorage& getEntityStorage() {
@@ -24,6 +25,8 @@ namespace Universe {
     bool isProcessing = false;
 
     int resolutionX, resolutionY;
+
+    float renderResolutionScale = 1.0f;
 
     int getResolutionX() {
         return resolutionX;
@@ -48,6 +51,17 @@ namespace Universe {
         return &input;
     }
 
+    void updateRenderResolutionScalingFactor() {
+        renderResolutionScale = std::min(
+            static_cast<float>(GetScreenWidth())/static_cast<float>(screenTexture.texture.width),
+            static_cast<float>(GetScreenHeight())/static_cast<float>(screenTexture.texture.height)
+        );
+    }
+
+    [[nodiscard]] float getResolutionScalingFactor() {
+        return renderResolutionScale;
+    }
+
     void defer(const std::function<void()> &f) {
         deferredActions.push_back(f);
     }
@@ -65,7 +79,8 @@ namespace Universe {
     void renderAll() {
         prepaint.tick();
 
-        BeginDrawing();
+        BeginTextureMode(screenTexture);
+
         ClearBackground(DARKGRAY);
         BeginMode2D(camera);
 
@@ -80,6 +95,32 @@ namespace Universe {
         DrawRectangle(0, 0, 150, 100, Fade(BLACK, 0.8));
         DrawFPS(15, 15);
         DrawText(GameUtil::fmt("entities: %d", getEntityStorage().size()).c_str(), 15, 35, 20, WHITE);
+
+        EndTextureMode();
+
+        BeginDrawing();
+
+        const float scale = getResolutionScalingFactor();
+
+        const auto width = static_cast<float>(GetScreenWidth());
+        const auto height = static_cast<float>(GetScreenHeight());
+
+        const auto renderWidth = static_cast<float>(screenTexture.texture.width);
+        const auto renderHeight = static_cast<float>(screenTexture.texture.height);
+
+        DrawTexturePro(
+            screenTexture.texture,
+            {0, 0, renderWidth, -renderHeight},
+            {
+                (width - renderWidth * scale) * 0.5f,
+                (height - renderHeight * scale) * 0.5f,
+                renderWidth * scale,
+                renderHeight * scale
+            },
+            {0, 0},
+            0.0f,
+            WHITE
+        );
 
         EndDrawing();
     }
@@ -100,6 +141,7 @@ namespace Universe {
 
         stop();
 
+        UnloadRenderTexture(screenTexture);
         CloseWindow();
     }
 
@@ -111,11 +153,14 @@ namespace Universe {
             isProcessing = false;
             runDeferred();
 
+            if (IsWindowResized()) {
+                updateRenderResolutionScalingFactor();
+            }
             gameTime += getScaledDeltaTime();
         }
     }
 
-    void init(const int width, const int height, const char* title, const std::function<void()>& start, const std::function<void()>& stop) {
+    void init(const int width, const int height, const char* title, const std::function<void()>& start, const std::function<void()>& stop, const int renderWidth, const int renderHeight) {
         resolutionX = width;
         resolutionY = height;
 
@@ -130,8 +175,12 @@ namespace Universe {
 
         RandomGen::init();
 
-        SetConfigFlags(FLAG_WINDOW_ALWAYS_RUN);
+        SetConfigFlags(FLAG_WINDOW_ALWAYS_RUN | FLAG_WINDOW_RESIZABLE);
+
         InitWindow(width, height, title);
+
+        screenTexture = LoadRenderTexture(renderWidth, renderHeight);
+        updateRenderResolutionScalingFactor();
 
         start();
 
@@ -157,5 +206,13 @@ namespace Universe {
 
     ResourceManager* getResourceManager() {
          return resourceManager;
+    }
+
+    int getRenderResolutionWidth() {
+        return screenTexture.texture.width;
+    }
+
+    int getRenderResolutionHeight() {
+        return screenTexture.texture.height;
     }
 } // Universe
