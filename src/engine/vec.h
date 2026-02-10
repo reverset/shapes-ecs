@@ -106,6 +106,11 @@ struct Vec2 {
         return {x * b.x, y * b.y};
     }
 
+    constexpr Vec2 operator/(const Vec2& b) const {
+        return {x / b.x, y / b.y};
+    }
+
+
     constexpr Vec2 operator+=(const Vec2& b) {
         x += b.x;
         y += b.y;

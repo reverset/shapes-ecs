@@ -99,6 +99,7 @@ namespace Universe {
         EndTextureMode();
 
         BeginDrawing();
+        ClearBackground(BLACK);
 
         const float scale = getResolutionScalingFactor();
 

@@ -18,7 +18,13 @@ FetchContent_MakeAvailable(raylib)
 
 add_executable(game
         src/game/main.cpp
+        src/game/particles.h
+        src/game/BitLayers.h
+        src/game/enemies.h
+        src/game/unitcomponents.h
+        src/game/assetstore.h
         src/engine/Universe.cpp
+        src/engine/event.h
         src/engine/Universe.h
         src/engine/vec.h
         src/engine/timer.h
@@ -30,14 +36,9 @@ add_executable(game
         src/engine/RandomGen.h
         src/engine/ecs.h
         src/engine/logging.h
-        src/game/particles.h
         src/engine/standardcomponents.h
         src/engine/tilemap.h
-        src/game/BitLayers.h
-        src/engine/event.h
-        src/game/enemies.h
-        src/game/unitcomponents.h
-        src/game/assetstore.h
+        src/engine/ui.h
 )
 
 target_link_libraries(game PRIVATE raylib)

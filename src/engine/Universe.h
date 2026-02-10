@@ -12,6 +12,38 @@
 #include "timer.h"
 #include "util.h"
 
+#ifndef NDEBUG
+#define ASSERT(x, msg) if (!(x)) { std::cout << msg << std::endl; std::exit(1); }
+#else
+#define ASSERT(x, msg)
+#endif
+
+// probably want to organize these functions somewhere else but what the hell
+
+// copied from raylib, just made it constexpr
+[[nodiscard]] constexpr Color fade1(const Color color, float alpha)
+{
+    Color result = color;
+
+    if (alpha < 0.0f) alpha = 0.0f;
+    else if (alpha > 1.0f) alpha = 1.0f;
+
+    result.a = (unsigned char)(255.0f*alpha);
+
+    return result;
+}
+
+[[nodiscard]] constexpr Color colorLerp(const Color a, const Color b, float delta) {
+    return {
+        static_cast<unsigned char>(GameUtil::lerp(static_cast<float>(a.r), static_cast<float>(b.r), delta)),
+        static_cast<unsigned char>(GameUtil::lerp(static_cast<float>(a.g), static_cast<float>(b.g), delta)),
+        static_cast<unsigned char>(GameUtil::lerp(static_cast<float>(a.b), static_cast<float>(b.b), delta)),
+        static_cast<unsigned char>(GameUtil::lerp(static_cast<float>(a.a), static_cast<float>(b.a), delta)),
+    };
+}
+
+constexpr Color DARKERGRAY = colorLerp(DARKGRAY, BLACK, 0.5);
+
 namespace Universe {
     inline Schedule onUpdate;
     inline Schedule onLateUpdate;

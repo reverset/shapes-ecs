@@ -16,6 +16,11 @@
 
 #include "../engine/standardcomponents.h"
 #include "../engine/tilemap.h"
+#include "../engine/ui.h"
+
+struct PlayerHealthBar : Component<PlayerHealthBar> {
+    COMPONENT_STORAGE(PlayerHealthBar);
+};
 
 void defineKeybindings() {
     const auto input = Universe::getInputManager();
@@ -96,6 +101,18 @@ void handleBulletHitUnit(const ColliderOverlapEvent& event) {
     });
 }
 
+void renderPlayerHealthBar(const Entity, const PlayerHealthBar&, const Health& hp) {
+    const auto pos = UI::percentFromBLCorner({0.05, 0.1});
+
+    constexpr float maxLength = 200.0f;
+    constexpr float barHeight = 25.0f;
+
+    const auto desiredLength = hp.getHealthNormalized() * maxLength;
+
+    DrawRectangleRounded({pos.x, pos.y, maxLength, barHeight}, 0.8, 4, DARKERGRAY);
+    DrawRectangleRounded({pos.x, pos.y, desiredLength, barHeight}, 0.8, 4, RED);
+}
+
 void loadMap() {
     const auto man = Universe::getResourceManager();
     auto& es = Universe::getEntityStorage();
@@ -164,6 +181,9 @@ int main() {
         Universe::onLateUpdate
             .registerSystem<Player, Transform2d>(centerCameraOnPlayer);
 
+        Universe::onRenderUi
+            .registerSystem<PlayerHealthBar, Health>(renderPlayerHealthBar);
+
         // Universe::onEarlyRender2d
         //     .registerSystem<Tilemap, Transform2d>(TilemapSystems::renderTilemapsChunked);
 
@@ -182,7 +202,9 @@ int main() {
             .addComponent(Transform2d())
             .addComponent(TilemapRenderTracker())
             .addComponent(TilemapCollider(16, 16))
-            .addComponent(CollisionRect(16, 16, BitLayers::PLAYER_LAYER, BitLayers::NONE));
+            .addComponent(CollisionRect(16, 16, BitLayers::PLAYER_LAYER, BitLayers::NONE))
+            .addComponent(Health(200))
+            .addComponent(PlayerHealthBar());
 
         for (float i = 0; i < 20; i += 1) {
             Enemies::spawnMeanie({120, 6 + (i*16)});
