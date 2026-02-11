@@ -147,7 +147,23 @@ void loadMap() {
         .addComponent(Transform2d());
 }
 
+#include "dirent.h"
+
+void list_resources() {
+    DIR *dir = opendir("resources");
+    if (!dir) {
+        printf("Cannot open /resources!\n");
+        return;
+    }
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        printf("Found file: %s\n", entry->d_name);
+    }
+    closedir(dir);
+}
+
 int main() {
+    list_resources();
     // TODO update gamepad mapping for linux ... MIGHT BE MORE PROBLEMATIC THAN ANTICIPATED
 
     // std::ifstream fstream(Files::path("gamecontrollerdb.txt"));

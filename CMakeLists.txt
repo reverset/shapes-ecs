@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.22)
 project(game)
 
+if(EMSCRIPTEN)
+    set(PLATFORM Web CACHE STRING "" FORCE)
+
+    set(CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES "")
+    set(CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES "")
+endif()
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -42,3 +49,20 @@ add_executable(game
 )
 
 target_link_libraries(game PRIVATE raylib)
+
+if(EMSCRIPTEN)
+    set_target_properties(game PROPERTIES SUFFIX ".html")
+
+    # Add linker flags: embed resources and Emscripten options
+    set_target_properties(game PROPERTIES
+            LINK_FLAGS "--embed-file ${CMAKE_SOURCE_DIR}/resources@/resources -sUSE_GLFW=3 -sASYNCIFY -sALLOW_MEMORY_GROWTH"
+    )
+
+#    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+#    target_link_options(game PRIVATE
+#            "-sUSE_GLFW=3"
+#            "-sASYNCIFY"
+#            "-sALLOW_MEMORY_GROWTH"
+#            "--embed-file ${CMAKE_SOURCE_DIR}/resources@/resources"
+#    )
+endif()
