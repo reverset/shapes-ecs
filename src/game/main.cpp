@@ -114,10 +114,9 @@ void renderPlayerHealthBar(const Entity, const PlayerHealthBar&, const Health& h
 }
 
 void loadMap() {
-    const auto man = Universe::getResourceManager();
     auto& es = Universe::getEntityStorage();
 
-    const auto grassTexture = AssetStore::getGrassTexture();
+    const auto tileTexture = AssetStore::getGrassTexture();
     const auto genericWallTexture = AssetStore::getGenericWallTexture();
 
     auto map = Tilemap(100, 100, 16.0f, 3);
@@ -126,7 +125,7 @@ void loadMap() {
     //     .position = {0, 0},
     // });
 
-    map.fillTile(0, Sprite(grassTexture), {0, 0}, {100, 100});
+    map.fillTile(0, Sprite(tileTexture), {0, 0}, {100, 100});
 
     map.insertTile(1, Tile{
         .sprite = Sprite(genericWallTexture),
@@ -145,33 +144,21 @@ void loadMap() {
     es.makeEntity()
         .addComponent(std::move(map))
         .addComponent(Transform2d());
-}
 
-#include "dirent.h"
+    const auto testPath = map.calculatePath(Vec2ui::zero(), {15, 15}, 0);
+    Logging::log("testPath size=%d", testPath.size());
 
-void list_resources() {
-    DIR *dir = opendir("resources");
-    if (!dir) {
-        printf("Cannot open /resources!\n");
-        return;
+    for (const auto relPos : testPath) {
+        const auto pos = map.toWorldPosition({0, 0}, relPos);
+
+        es.makeEntity()
+            .addComponent(DebugMarker{})
+            .addComponent(Transform2d(pos));
     }
-    struct dirent *entry;
-    while ((entry = readdir(dir)) != nullptr) {
-        printf("Found file: %s\n", entry->d_name);
-    }
-    closedir(dir);
 }
 
 int main() {
-    list_resources();
     // TODO update gamepad mapping for linux ... MIGHT BE MORE PROBLEMATIC THAN ANTICIPATED
-
-    // std::ifstream fstream(Files::path("gamecontrollerdb.txt"));
-    // std::stringstream buffer;
-    //
-    // buffer << fstream.rdbuf();
-    //
-    // SetGamepadMappings(buffer.str().c_str());
 
     Universe::init(640, 360, "Game", [] {
         AssetStore::initialLoadAll();
@@ -222,7 +209,7 @@ int main() {
             .addComponent(Health(200))
             .addComponent(PlayerHealthBar());
 
-        for (float i = 0; i < 20; i += 1) {
+        for (float i = 0; i < 2; i += 1) {
             Enemies::spawnMeanie({120, 6 + (i*16)});
         }
     }, [] {});

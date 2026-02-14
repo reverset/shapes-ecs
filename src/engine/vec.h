@@ -19,6 +19,27 @@ struct Vec2ui {
         return x == other.x && y == other.y;
     }
 
+    constexpr Vec2ui operator+(const Vec2ui& other) const {
+        return {
+            x + other.x,
+            y + other.y
+        };
+    }
+
+    constexpr Vec2ui operator-(const Vec2ui& other) const {
+        return {
+            x - other.x,
+            y - other.y
+        };
+    }
+
+    [[nodiscard]] constexpr std::uint32_t distanceSquared(const Vec2ui& other) const {
+        const std::int32_t xi = static_cast<std::int32_t>(other.x) - static_cast<std::int32_t>(x);
+        const std::int32_t yi = static_cast<std::int32_t>(other.x) - static_cast<std::int32_t>(x);
+
+        return xi*xi + yi*yi;
+    }
+
     constexpr Vec2ui operator*(const float other) const {
         return {
             static_cast<std::uint32_t>(static_cast<float>(x) * other),

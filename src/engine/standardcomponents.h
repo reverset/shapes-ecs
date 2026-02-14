@@ -117,7 +117,6 @@ struct ConstantForce : Component<ConstantForce> {
     }
 };
 
-
 struct CollisionRect : Component<CollisionRect> {
     COMPONENT_STORAGE(CollisionRect);
 
@@ -167,6 +166,12 @@ struct CollisionRect : Component<CollisionRect> {
             dimensions.y,
         };
     }
+};
+
+struct DebugMarker : Component<DebugMarker> {
+    COMPONENT_STORAGE(DebugMarker);
+
+    Color color = WHITE;
 };
 
 struct ColliderOverlapEvent : Event<ColliderOverlapEvent> {
@@ -238,6 +243,10 @@ namespace StandardComponentSystems {
         });
     }
 
+    inline void debugDrawMarkers(const Entity, const DebugMarker& marker, const Transform2d& trans) {
+        DrawCircle(trans.position.xInt(), trans.position.yInt(), 3.0f, marker.color);
+    }
+
     inline void registerAll() {
         Universe::onUpdate.registerSystem<FadeOverTime, Sprite>(fadeOverTime);
         Universe::onUpdate.registerSystem<ConstantForce, Velocity>(applyConstantForce);
@@ -246,7 +255,9 @@ namespace StandardComponentSystems {
     }
 
     inline void enableDebugRendering() {
-        Universe::onLateRender2d.registerSystem<CollisionRect, Transform2d>(debugDrawCollisionRects);
+        Universe::onLateRender2d
+            .registerSystem<CollisionRect, Transform2d>(debugDrawCollisionRects)
+            .registerSystem<DebugMarker, Transform2d>(debugDrawMarkers);
     }
 }
 

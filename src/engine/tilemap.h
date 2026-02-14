@@ -1,6 +1,9 @@
 #ifndef GAME_TILEMAP_H
 #define GAME_TILEMAP_H
 
+#include <algorithm>
+#include <queue>
+
 #include "vector"
 #include "raylib.h"
 
@@ -58,6 +61,99 @@ public:
             tiles.emplace_back();
             cachedTiles.emplace_back();
         }
+    }
+
+    [[nodiscard]] std::vector<Vec2ui> getValidNeighbors(const Vec2ui point) const {
+        std::vector<Vec2ui> res;
+        for (std::int32_t x = static_cast<std::int32_t>(point.x) - 1; x < static_cast<std::int32_t>(point.x) + 2; ++x) {
+            if (x < 0 && x >= width) continue;
+
+            for (std::int32_t y = static_cast<std::int32_t>(point.y) - 1; y < static_cast<std::int32_t>(point.y) + 2; ++y) {
+                if (y < 0 && y >= height) continue;
+
+                res.push_back({
+                    static_cast<std::uint32_t>(x),
+                    static_cast<std::uint32_t>(y)
+                });
+            }
+        }
+
+        return res;
+    }
+
+    // This returns the path in reverse
+    [[nodiscard]] std::vector<Vec2ui> calculatePath(const Vec2ui start, const Vec2ui end, const std::size_t layer) const {
+        const std::function<std::size_t(Vec2ui)> heuristic = [end](const Vec2ui v) {
+            return v.distanceSquared(end);
+        };
+
+        // todo use priority queue or min-heap for perfomance boost
+        std::unordered_set<Vec2ui, SpatialHash> openSet = {};
+
+        // TODO: perhaps dynamically load the openSet as it is requested?
+        // or I could load all tiles in the spatial hashes between start and end
+        // definitely dont copy ALL tiles, that would be insane.
+        // const auto t = tiles.at(layer);
+
+        std::unordered_map<Vec2ui, Vec2ui, SpatialHash> cameFrom;
+
+        std::unordered_map<Vec2ui, std::size_t, SpatialHash> gScore;
+        std::unordered_map<Vec2ui, std::size_t, SpatialHash> fScore;
+
+        gScore[start] = 0;
+        fScore[start] = heuristic(start);
+
+        while (!openSet.empty()) {
+            auto current = std::ranges::fold_left(openSet.begin(), openSet.end(), start, [&](Vec2ui l, Vec2ui r) {
+                if (!fScore.contains(l)) {
+                    fScore[l] = std::numeric_limits<std::size_t>::max();
+                }
+                if (!fScore.contains(r)) {
+                    fScore[r] = std::numeric_limits<std::size_t>::max();
+                }
+
+                const auto lscore = fScore.at(l);
+                const auto rscore = fScore.at(r);
+
+                if (lscore < rscore)
+                    return l;
+
+                return r;
+            });
+
+            if (current == end) {
+                std::vector<Vec2ui> path;
+                path.reserve(cameFrom.size()); // over allocates
+
+                while (cameFrom.contains(current)) {
+                    current = cameFrom.at(current);
+                    path.push_back(current);
+                }
+
+                return path;
+            }
+
+            openSet.erase(current);
+
+            for (const auto neighbor : getValidNeighbors(current)) {
+                const auto tentativeGscore = gScore.at(current) + 1; // replace 1 with 'the weight of the edge from current to neighbor'
+
+                if (!gScore.contains(neighbor)) {
+                    gScore[neighbor] = std::numeric_limits<std::size_t>::max();
+                }
+
+                if (tentativeGscore < gScore[neighbor]) {
+                    cameFrom[neighbor] = current;
+                    gScore[neighbor] = tentativeGscore;
+                    fScore[neighbor] = tentativeGscore + heuristic(neighbor);
+                    if (!openSet.contains(neighbor)) {
+                        openSet.insert(neighbor);
+                    }
+                }
+            }
+        }
+
+        return {};
     }
 
     [[nodiscard]] std::uint32_t getWidth() const {
