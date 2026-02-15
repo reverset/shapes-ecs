@@ -201,8 +201,12 @@ struct Vec2 {
         };
     }
 
+    // Will not be able to resize of the current magnitude is 0
     [[nodiscard]] constexpr Vec2 resize(const float mag) const {
-        return *this * (mag / magnitude());
+        const auto currentMag = magnitude();
+        if (currentMag == 0) return {0, 0};
+
+        return *this * (mag / currentMag);
     }
 
     constexpr explicit Vec2(const Vec2ui other) {

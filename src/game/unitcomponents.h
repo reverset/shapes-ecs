@@ -65,7 +65,18 @@ struct Health : Component<Health> {
     }
 };
 
-MARKER_COMPONENT(RemoveOnDeath);
+struct RemoveOnDeath : Component<RemoveOnDeath> {
+    COMPONENT_STORAGE(RemoveOnDeath);
+
+    std::function<void(Entity)> onDeath = nullptr;
+
+    explicit RemoveOnDeath() = default;
+
+    explicit RemoveOnDeath(const std::function<void(Entity)>& onDeath) {
+        this->onDeath = onDeath;
+    }
+};
+
 MARKER_COMPONENT(DeathMarker);
 
 struct HealthBar : Component<HealthBar> {
@@ -167,7 +178,11 @@ namespace UnitComponents {
         }
     }
 
-    inline void removeDead(const Entity e, const RemoveOnDeath&, const DeathMarker&) {
+    inline void removeDead(const Entity e, const RemoveOnDeath& rd, const DeathMarker&) {
+        if (rd.onDeath != nullptr) {
+            rd.onDeath(e);
+        }
+
         Universe::getEntityStorage()
             .destroyEntity(e);
     }

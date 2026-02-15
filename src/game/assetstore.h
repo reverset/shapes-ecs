@@ -30,6 +30,10 @@ namespace AssetStore {
         man->registerResource(
             "meanie",
             new TextureResource("meanie.png"));
+
+        man->registerResource(
+            "target",
+            new TextureResource("target.png"));
     }
 
     // no more typos
@@ -55,6 +59,10 @@ namespace AssetStore {
 
     inline TextureResource* getPlayerTexture() {
         return *Universe::getResourceManager()->getResource<TextureResource>("player");
+    }
+
+    inline TextureResource* getTargetTexture() {
+        return *Universe::getResourceManager()->getResource<TextureResource>("target");
     }
 }
 

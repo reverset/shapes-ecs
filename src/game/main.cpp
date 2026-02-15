@@ -114,46 +114,59 @@ void renderPlayerHealthBar(const Entity, const PlayerHealthBar&, const Health& h
 }
 
 void loadMap() {
-    auto& es = Universe::getEntityStorage();
+    // auto& es = Universe::getEntityStorage();
 
-    const auto tileTexture = AssetStore::getGrassTexture();
-    const auto genericWallTexture = AssetStore::getGenericWallTexture();
+    // const auto tileTexture = AssetStore::getGrassTexture();
+    // const auto genericWallTexture = AssetStore::getGenericWallTexture();
 
-    auto map = Tilemap(100, 100, 16.0f, 3);
-    // map.insertTile(0, Tile {
-    //     .sprite = Sprite(grassTexture),
-    //     .position = {0, 0},
-    // });
+    // auto map = Tilemap(100, 100, 16.0f, 3);
+    // // map.insertTile(0, Tile {
+    // //     .sprite = Sprite(grassTexture),
+    // //     .position = {0, 0},
+    // // });
+    //
+    // map.fillTile(0, Sprite(tileTexture), {0, 0}, {100, 100});
+    //
+    // map.insertTile(1, Tile{
+    //     .sprite = Sprite(genericWallTexture),
+    //     .position = Vec2ui{5, 5},
+    // }, true);
+    //
+    // map.insertTile(1, Tile{
+    //     .sprite = Sprite(genericWallTexture),
+    //     .position = Vec2ui{7, 5},
+    // }, true);
+    //
+    // map.fillTile(1, Sprite(genericWallTexture), {8, 8}, {12, 12}, true);
+    //
+    // map.cacheAll();
 
-    map.fillTile(0, Sprite(tileTexture), {0, 0}, {100, 100});
+    // es.makeEntity()
+    //     .addComponent(std::move(map))
+    //     .addComponent(Transform2d());
 
-    map.insertTile(1, Tile{
-        .sprite = Sprite(genericWallTexture),
-        .position = Vec2ui{5, 5},
-    }, true);
+    // const auto testPath = map.calculatePath(Vec2ui::zero(), {15, 15}, 0);
+    // Logging::log("testPath size=%d", testPath.size());
+    //
+    // for (const auto relPos : testPath) {
+    //     const auto pos = map.toWorldPosition({0, 0}, relPos);
+    //
+    //     es.makeEntity()
+    //         .addComponent(DebugMarker{})
+    //         .addComponent(Transform2d(pos));
+    // }
+}
 
-    map.insertTile(1, Tile{
-        .sprite = Sprite(genericWallTexture),
-        .position = Vec2ui{7, 5},
-    }, true);
-
-    map.fillTile(1, Sprite(genericWallTexture), {8, 8}, {12, 12}, true);
-
-    map.cacheAll();
-
-    es.makeEntity()
-        .addComponent(std::move(map))
-        .addComponent(Transform2d());
-
-    const auto testPath = map.calculatePath(Vec2ui::zero(), {15, 15}, 0);
-    Logging::log("testPath size=%d", testPath.size());
-
-    for (const auto relPos : testPath) {
-        const auto pos = map.toWorldPosition({0, 0}, relPos);
-
-        es.makeEntity()
-            .addComponent(DebugMarker{})
-            .addComponent(Transform2d(pos));
+void debugButtons(const Entity, const Player&, const Transform2d& trans) {
+    // auto& es = Universe::getEntityStorage();
+    if (IsKeyPressed(KEY_SLASH)) {
+        Logging::log("spawning meanie");
+        const auto desiredPos = trans.position + Vec2::randomDirection(200);
+        Enemies::spawnMeanie(desiredPos);
+    } else if (IsKeyPressed(KEY_PERIOD)) {
+        Logging::log("spawning circle");
+        const auto desiredPos = trans.position + Vec2::randomDirection(50);
+        Enemies::spawnTargeter(desiredPos, 2);
     }
 }
 
@@ -186,6 +199,9 @@ int main() {
 
         Universe::onRenderUi
             .registerSystem<PlayerHealthBar, Health>(renderPlayerHealthBar);
+
+        Universe::onFinalFrameUpdate
+            .registerSystem<Player, Transform2d>(debugButtons);
 
         // Universe::onEarlyRender2d
         //     .registerSystem<Tilemap, Transform2d>(TilemapSystems::renderTilemapsChunked);
