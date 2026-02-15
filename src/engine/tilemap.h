@@ -81,80 +81,84 @@ public:
         return res;
     }
 
+    // TODO pathfinding
     // This returns the path in reverse
-    [[nodiscard]] std::vector<Vec2ui> calculatePath(const Vec2ui start, const Vec2ui end, const std::size_t layer) const {
-        const std::function<std::size_t(Vec2ui)> heuristic = [end](const Vec2ui v) {
-            return v.distanceSquared(end);
-        };
-
-        // todo use priority queue or min-heap for perfomance boost
-        std::unordered_set<Vec2ui, SpatialHash> openSet = {};
-
-        // TODO: perhaps dynamically load the openSet as it is requested?
-        // or I could load all tiles in the spatial hashes between start and end
-        // definitely dont copy ALL tiles, that would be insane.
-        // const auto t = tiles.at(layer);
-
-        std::unordered_map<Vec2ui, Vec2ui, SpatialHash> cameFrom;
-
-        std::unordered_map<Vec2ui, std::size_t, SpatialHash> gScore;
-        std::unordered_map<Vec2ui, std::size_t, SpatialHash> fScore;
-
-        gScore[start] = 0;
-        fScore[start] = heuristic(start);
-
-        while (!openSet.empty()) {
-            auto current = std::ranges::fold_left(openSet.begin(), openSet.end(), start, [&](Vec2ui l, Vec2ui r) {
-                if (!fScore.contains(l)) {
-                    fScore[l] = std::numeric_limits<std::size_t>::max();
-                }
-                if (!fScore.contains(r)) {
-                    fScore[r] = std::numeric_limits<std::size_t>::max();
-                }
-
-                const auto lscore = fScore.at(l);
-                const auto rscore = fScore.at(r);
-
-                if (lscore < rscore)
-                    return l;
-
-                return r;
-            });
-
-            if (current == end) {
-                std::vector<Vec2ui> path;
-                path.reserve(cameFrom.size()); // over allocates
-
-                while (cameFrom.contains(current)) {
-                    current = cameFrom.at(current);
-                    path.push_back(current);
-                }
-
-                return path;
-            }
-
-            openSet.erase(current);
-
-            for (const auto neighbor : getValidNeighbors(current)) {
-                const auto tentativeGscore = gScore.at(current) + 1; // replace 1 with 'the weight of the edge from current to neighbor'
-
-                if (!gScore.contains(neighbor)) {
-                    gScore[neighbor] = std::numeric_limits<std::size_t>::max();
-                }
-
-                if (tentativeGscore < gScore[neighbor]) {
-                    cameFrom[neighbor] = current;
-                    gScore[neighbor] = tentativeGscore;
-                    fScore[neighbor] = tentativeGscore + heuristic(neighbor);
-                    if (!openSet.contains(neighbor)) {
-                        openSet.insert(neighbor);
-                    }
-                }
-            }
-        }
-
-        return {};
-    }
+    // [[nodiscard]] std::vector<Vec2ui> calculatePath(const Vec2ui start, const Vec2ui end, const std::size_t layer) const {
+    //     const std::function<std::size_t(Vec2ui)> heuristic = [end](const Vec2ui v) {
+    //         return v.distanceSquared(end);
+    //     };
+    //
+    //     // todo use priority queue or min-heap for perfomance boost
+    //     // std::unordered_set<Vec2ui, SpatialHash> openSet = {};
+    //     std::unordered_set<Vec2ui, SpatialHash> inverseOpenSet = {};
+    //
+    //     // TODO: perhaps dynamically load the openSet as it is requested?
+    //     // or I could load all tiles in the spatial hashes between start and end
+    //     // definitely dont copy ALL tiles, that would be insane.
+    //     // const auto t = tiles.at(layer);
+    //
+    //     std::unordered_map<Vec2ui, Vec2ui, SpatialHash> cameFrom;
+    //
+    //     std::unordered_map<Vec2ui, std::size_t, SpatialHash> gScore;
+    //     std::unordered_map<Vec2ui, std::size_t, SpatialHash> fScore;
+    //
+    //     gScore[start] = 0;
+    //     fScore[start] = heuristic(start);
+    //
+    //     constexpr int MAX_ITER = 300;
+    //
+    //     while (inverseOpenSet.size() < 300) {
+    //         auto current = std::ranges::fold_left(openSet.begin(), openSet.end(), start, [&](Vec2ui l, Vec2ui r) {
+    //             if (!fScore.contains(l)) {
+    //                 fScore[l] = std::numeric_limits<std::size_t>::max();
+    //             }
+    //             if (!fScore.contains(r)) {
+    //                 fScore[r] = std::numeric_limits<std::size_t>::max();
+    //             }
+    //
+    //             const auto lscore = fScore.at(l);
+    //             const auto rscore = fScore.at(r);
+    //
+    //             if (lscore < rscore)
+    //                 return l;
+    //
+    //             return r;
+    //         });
+    //
+    //         if (current == end) {
+    //             std::vector<Vec2ui> path;
+    //             path.reserve(cameFrom.size()); // over allocates
+    //
+    //             while (cameFrom.contains(current)) {
+    //                 current = cameFrom.at(current);
+    //                 path.push_back(current);
+    //             }
+    //
+    //             return path;
+    //         }
+    //
+    //         openSet.erase(current);
+    //
+    //         for (const auto neighbor : getValidNeighbors(current)) {
+    //             const auto tentativeGscore = gScore.at(current) + 1; // replace 1 with 'the weight of the edge from current to neighbor'
+    //
+    //             if (!gScore.contains(neighbor)) {
+    //                 gScore[neighbor] = std::numeric_limits<std::size_t>::max();
+    //             }
+    //
+    //             if (tentativeGscore < gScore[neighbor]) {
+    //                 cameFrom[neighbor] = current;
+    //                 gScore[neighbor] = tentativeGscore;
+    //                 fScore[neighbor] = tentativeGscore + heuristic(neighbor);
+    //                 if (!openSet.contains(neighbor)) {
+    //                     openSet.insert(neighbor);
+    //                 }
+    //             }
+    //         }
+    //     }
+    //
+    //     return {};
+    // }
 
     [[nodiscard]] std::uint32_t getWidth() const {
         return width;
