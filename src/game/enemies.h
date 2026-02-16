@@ -48,6 +48,8 @@ struct Pulse : Component<Pulse> {
 };
 
 namespace Enemies {
+
+    // TODO, after dealing damage, disable damage!
     inline Entity spawnPulse(const Vec2 pos, const std::uint32_t dmg, const Color color) {
         constexpr auto fadeDuration = Duration::ofSeconds(1.0f);
 
@@ -60,6 +62,7 @@ namespace Enemies {
             .addComponent(Transform2d(pos, 0.0f, 1.5f))
             .addComponent(std::move(sprite))
             .addComponent(RenderLayer4())
+            .addComponent(DamageVolume(BitLayers::ENEMY_LAYER, dmg, {10, 10}, Duration::ofSeconds(1.0)))
             .addComponent(FadeOverTime(fadeDuration))
             .addComponent(Transient(fadeDuration))
             .getEntity();
@@ -215,8 +218,9 @@ namespace Enemies {
                 const auto direction = (trans.position - targetTrans.position);
                 const auto offset = direction.resize(15);
                 const auto pos = targetTrans.position + offset;
+                const auto color = GameUtil::colorLerp(RED, WHITE, static_cast<float>(0.5 * std::sin(Universe::getGameTime() * 10) + 0.5));
 
-                RenderUtil::DrawObtuseTriangleFacing(pos, direction.normalizeOrZero(), 20.0f, RED);
+                RenderUtil::DrawObtuseTriangleFacing(pos, direction.normalizeOrZero(), 20.0f, color);
             });
         }
     }

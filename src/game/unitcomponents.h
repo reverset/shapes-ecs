@@ -1,6 +1,7 @@
 #ifndef GAME_UNITCOMPONENTS_H
 #define GAME_UNITCOMPONENTS_H
 
+#include "BitLayers.h"
 #include "raylib.h"
 
 #include "../engine/Universe.h"
@@ -97,6 +98,32 @@ struct DeathEvent : Event<DeathEvent> {
     Entity victim;
 };
 
+struct DamageVolume : Component<DamageVolume> {
+    COMPONENT_STORAGE(DamageVolume);
+
+    Vec2 dimensions;
+    std::int32_t ignoreMagicNumber;
+    std::uint32_t damage;
+    Duration hitInterval;
+    Timestamp lastHit = Timestamp::longAgo();
+
+    explicit DamageVolume(
+        const std::int32_t ignoreMagicNumber,
+        const std::uint32_t damage,
+        const Vec2 dimensions,
+        const Duration hitInterval
+        ) : dimensions(dimensions), ignoreMagicNumber(ignoreMagicNumber), damage(damage), hitInterval(hitInterval) {}
+};
+
+struct DamageReceiverVolume : Component<DamageReceiverVolume> {
+    COMPONENT_STORAGE(DamageReceiverVolume);
+
+    Vec2 dimensions;
+    std::int32_t magicNumber;
+
+    explicit DamageReceiverVolume(const std::int32_t magicNumber, const Vec2 dimensions) : dimensions(dimensions), magicNumber(magicNumber) {}
+};
+
 namespace Spawning {
     inline Entity spawnBullet(const Entity attacker, const std::uint32_t baseDamage, const Vec2 pos, const Vec2 vel, const float hitboxScale, const BitLayers::Type mask, const std::string& spriteName = "bullet", const Color tint = WHITE) {
         constexpr auto lifetime = Duration::ofSeconds(2.0);
@@ -188,9 +215,30 @@ namespace UnitComponents {
             .destroyEntity(e);
     }
 
+    inline void checkForDamageViaVolumes(const Entity, DamageVolume& damageVolume, const Transform2d& trans) {
+        ECS::query<DamageReceiverVolume, Transform2d, Health>([&](const Entity, const DamageReceiverVolume& damageReceiver, const Transform2d& trans2, Health& health) {
+            if (BitLayers::isBitIn(damageVolume.ignoreMagicNumber, damageReceiver.magicNumber)) return;
+            if (!damageVolume.lastHit.hasElapsed(damageVolume.hitInterval)) return;
+
+            damageVolume.lastHit = Timestamp::now();
+
+            const auto rect1 = GameUtil::centeredRect(
+                trans.position.x, trans.position.y,
+                damageVolume.dimensions.x, damageVolume.dimensions.y);
+            const auto rect2 = GameUtil::centeredRect(
+                trans2.position.x, trans2.position.y,
+                damageReceiver.dimensions.x, damageReceiver.dimensions.y);
+
+            if (CheckCollisionRecs(rect1, rect2)) {
+                health.damage(damageVolume.damage);
+            }
+        });
+    }
+
     inline void registerAll() {
         Universe::onUpdate
-            .registerSystem<Health>(deathEventEmitter);
+            .registerSystem<Health>(deathEventEmitter)
+            .registerSystem<DamageVolume, Transform2d>(checkForDamageViaVolumes);
 
         Universe::onLateRender2d
             .registerSystem<HealthBar, Health, Transform2d>(renderHealthBars);

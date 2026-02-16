@@ -91,7 +91,6 @@ void handleBulletHitTile(const TilemapCollisionEvent& e) {
     });
 }
 
-// TODO, perhaps create a new component such as 'DamageVolume' and 'VulnerabilityVolume' and then abstract
 // this system to work for anything.
 void handleBulletHitUnit(const ColliderOverlapEvent& event) {
     ECS::queryComponentsFor<Bullet>(event.a, [&](const Entity bullet, const Bullet& bulletInfo) {
@@ -221,9 +220,10 @@ int main() {
             .addComponent(Player())
             .addComponent(Sprite(playerTexture))
             .addComponent(Transform2d())
-            .addComponent(TilemapRenderTracker())
+            // .addComponent(TilemapRenderTracker())
+            // .addComponent(TilemapCollider(16, 16))
             .addComponent(RenderLayer3())
-            .addComponent(TilemapCollider(16, 16))
+            .addComponent(DamageReceiverVolume(BitLayers::PLAYER_LAYER, {16, 16}))
             .addComponent(CollisionRect(16, 16, BitLayers::PLAYER_LAYER, BitLayers::NONE))
             .addComponent(Health(200))
             .addComponent(PlayerHealthBar());
