@@ -10,7 +10,12 @@
 #include <stdexcept>
 #include <cmath>
 
+#include "raylib.h"
+
 namespace GameUtil {
+    constexpr float PI_FOURTH = PI / 4.0f;
+    constexpr float PI_SIXTH = PI / 6.0f;
+
     template <typename T>
     void insertSorted(std::vector<T>* list, T&& item, const std::function<int(const T&, const T&)>& comparator) {
         for (size_t i = 0; i < list->size(); i++) {

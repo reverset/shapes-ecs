@@ -46,6 +46,7 @@ add_executable(game
         src/engine/standardcomponents.h
         src/engine/tilemap.h
         src/engine/ui.h
+        src/engine/renderutil.h
 )
 
 target_link_libraries(game PRIVATE raylib)

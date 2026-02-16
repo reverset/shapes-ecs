@@ -188,10 +188,11 @@ struct Vec2 {
     }
 
     [[nodiscard]] constexpr Vec2 moveTowardsMagnitude(const float target, const float delta) const {
-        const float angle = toAngle();
-        const float mag = magnitude();
-
-        return fromAngle(angle, GameUtil::moveTowards(mag, target, delta));
+        // const float angle = toAngle();
+        // const float mag = magnitude();
+        //
+        // return fromAngle(angle, GameUtil::moveTowards(mag, target, delta));
+        return resize(GameUtil::lerp(magnitude(), target, delta));
     }
 
     [[nodiscard]] constexpr Vec2 lerp(const Vec2 target, const float delta) const {
@@ -199,6 +200,10 @@ struct Vec2 {
             GameUtil::lerp(x, target.x, delta),
             GameUtil::lerp(y, target.y, delta),
         };
+    }
+
+    [[nodiscard]] constexpr Vec2 rotate(const float radians) const {
+        return fromAngle(toAngle() + radians, magnitude()); // TODO: avoid atan2 call by doing the matrix multiplication
     }
 
     // Will not be able to resize of the current magnitude is 0

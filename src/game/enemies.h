@@ -6,6 +6,7 @@
 #include "assetstore.h"
 #include "unitcomponents.h"
 #include "../engine/ecs.h"
+#include "../engine/renderutil.h"
 #include "../engine/standardcomponents.h"
 #include "../engine/Universe.h"
 #include "../engine/vec.h"
@@ -50,6 +51,7 @@ namespace Enemies {
             .addComponent(Health(50))
             .addComponent(HealthBar())
             .addComponent(Velocity())
+            .addComponent(RenderLayer1())
             .addComponent(RemoveOnDeath())
             .getEntity();
     }
@@ -95,9 +97,10 @@ namespace Enemies {
 
         return Universe::getEntityStorage().makeEntity()
             .addComponent(Target())
-            .addComponent(Transform2d(pos, 0.0f, 1.4f))
+            .addComponent(Transform2d(pos, RandomGen::randomFloat(0.0f, 45.0f), 1.4f))
             .addComponent(std::move(sprite))
             .addComponent(Velocity(0, 0, 5))
+            .addComponent(RenderLayer4())
             .addComponent(RemoveOnDeath())
             .getEntity();
     }
@@ -125,6 +128,18 @@ namespace Enemies {
         vel.velocity = vel.velocity.lerp(directionAndMagnitude, ACCEL * Universe::getScaledDeltaTime());
     }
 
+    inline Entity spawnShieldBubble(const Color color, const float scale) {
+        const auto texture = AssetStore::getShieldBubbleTexture();
+        auto sprite = Sprite(texture);
+        sprite.tint = color;
+
+        return Universe::getEntityStorage().makeEntity()
+            .addComponent(std::move(sprite))
+            .addComponent(Transform2d(Vec2::zero(), 0.0f, scale))
+            .addComponent(RenderLayer2())
+            .getEntity();
+    }
+
     inline Entity spawnTargeter(const Vec2 pos, const std::size_t targets) {
         std::vector<Entity> t;
 
@@ -133,8 +148,10 @@ namespace Enemies {
             t.push_back(target);
         }
 
+        const auto shield = spawnShieldBubble(SKYBLUE, 1.4f);
+
         auto sprite = Sprite(AssetStore::getPlayerTexture());
-        sprite.tint = GREEN;
+        sprite.tint = RED;
 
         return Universe::getEntityStorage().makeEntity()
             .addComponent(Targeter(std::move(t)))
@@ -144,7 +161,9 @@ namespace Enemies {
             .addComponent(Health(20))
             .addComponent(HealthBar())
             .addComponent(std::move(sprite))
-            .addComponent(RemoveOnDeath([](const Entity e) {
+            .addComponent(RenderLayer1())
+            .addComponent(Attached(shield))
+            .addComponent(RemoveOnDeath([shield](const Entity e) {
                 ECS::queryComponentsFor<Targeter>(e, [](const Entity, const Targeter& ta) {
                     auto& es = Universe::getEntityStorage();
 
@@ -152,8 +171,23 @@ namespace Enemies {
                         es.destroyEntity(target);
                     }
                 });
+
+                Universe::getEntityStorage().destroyEntity(shield);
+
             }))
             .getEntity();
+    }
+
+    inline void renderTargetHint(const Entity, const Targeter& targeter, const Transform2d& trans) {
+        for (const auto target : targeter.targets) {
+            ECS::queryComponentsFor<Transform2d>(target, [&](const Entity, const Transform2d& targetTrans) {
+                const auto direction = (trans.position - targetTrans.position);
+                const auto offset = direction.resize(15);
+                const auto pos = targetTrans.position + offset;
+
+                RenderUtil::DrawObtuseTriangleFacing(pos, direction.normalizeOrZero(), 20.0f, RED);
+            });
+        }
     }
 
     inline void registerAll() {
@@ -163,6 +197,9 @@ namespace Enemies {
 
         Universe::onUpdate
             .registerSystem<Target, Transform2d, Velocity>(updateTargetVel);
+
+        Universe::onLateRender2d
+            .registerSystem<Targeter, Transform2d>(renderTargetHint);
     }
 }
 

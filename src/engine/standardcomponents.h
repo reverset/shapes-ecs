@@ -168,11 +168,28 @@ struct CollisionRect : Component<CollisionRect> {
     }
 };
 
+struct Attached : Component<Attached> {
+    COMPONENT_STORAGE(Attached);
+
+    Entity entity;
+    Vec2 offset;
+
+    explicit Attached(const Entity entity) : entity(entity), offset(Vec2::zero()) {}
+    explicit Attached(const Entity entity, const Vec2 offset) : entity(entity), offset(offset) {}
+};
+
 struct DebugMarker : Component<DebugMarker> {
     COMPONENT_STORAGE(DebugMarker);
 
     Color color = WHITE;
 };
+
+MARKER_COMPONENT(RenderLayer0);
+MARKER_COMPONENT(RenderLayer1);
+MARKER_COMPONENT(RenderLayer2);
+MARKER_COMPONENT(RenderLayer3);
+MARKER_COMPONENT(RenderLayer4);
+MARKER_COMPONENT(RenderLayer5);
 
 struct ColliderOverlapEvent : Event<ColliderOverlapEvent> {
     EVENT_STORAGE(ColliderOverlapEvent);
@@ -225,6 +242,12 @@ namespace StandardComponentSystems {
         DrawRectangleLinesEx(collisionRect.makeRect(trans.position), 2.0f, RED);
     }
 
+    inline void moveAttached(const Entity, const Attached& attached, const Transform2d& trans) {
+        ECS::queryComponentsFor<Transform2d>(attached.entity, [&](const Entity, Transform2d& trans2) {
+            trans2.position = trans.position + attached.offset;
+        });
+    }
+
     inline void checkColliderOverlap(const Entity a, CollisionRect& cRect, const Transform2d& trans) {
         // TODO, obviously dont check collision with EVERYTHING!!! (perhaps use spatial hashing again? octrees?)
         ECS::query<CollisionRect, Transform2d>([&](const Entity b, CollisionRect& rect2, const Transform2d& trans2) {
@@ -248,10 +271,14 @@ namespace StandardComponentSystems {
     }
 
     inline void registerAll() {
-        Universe::onUpdate.registerSystem<FadeOverTime, Sprite>(fadeOverTime);
-        Universe::onUpdate.registerSystem<ConstantForce, Velocity>(applyConstantForce);
-        Universe::onUpdate.registerSystem<Transient>(removeTransient);
-        Universe::onUpdate.registerSystem<CollisionRect, Transform2d>(checkColliderOverlap);
+        Universe::onUpdate
+            .registerSystem<FadeOverTime, Sprite>(fadeOverTime)
+            .registerSystem<ConstantForce, Velocity>(applyConstantForce)
+            .registerSystem<Transient>(removeTransient)
+            .registerSystem<CollisionRect, Transform2d>(checkColliderOverlap);
+
+        Universe::onLateUpdate
+            .registerSystem<Attached, Transform2d>(moveAttached);
     }
 
     inline void enableDebugRendering() {
@@ -262,12 +289,40 @@ namespace StandardComponentSystems {
 }
 
 namespace RenderingSystems {
-    inline void renderSprites(const Entity, const Sprite& sprite, const Transform2d& trans) {
+
+    // maybe make a macro
+    inline void renderSprites_0(const Entity, const RenderLayer0&, const Sprite& sprite, const Transform2d& trans) {
+        sprite.texture->renderEx(trans.position, sprite.offset, trans.rotation, trans.scale, sprite.tint);
+    }
+
+    inline void renderSprites_1(const Entity, const RenderLayer1&, const Sprite& sprite, const Transform2d& trans) {
+        sprite.texture->renderEx(trans.position, sprite.offset, trans.rotation, trans.scale, sprite.tint);
+    }
+
+    inline void renderSprites_2(const Entity, const RenderLayer2&, const Sprite& sprite, const Transform2d& trans) {
+        sprite.texture->renderEx(trans.position, sprite.offset, trans.rotation, trans.scale, sprite.tint);
+    }
+
+    inline void renderSprites_3(const Entity, const RenderLayer3&, const Sprite& sprite, const Transform2d& trans) {
+        sprite.texture->renderEx(trans.position, sprite.offset, trans.rotation, trans.scale, sprite.tint);
+    }
+
+    inline void renderSprites_4(const Entity, const RenderLayer4&, const Sprite& sprite, const Transform2d& trans) {
+        sprite.texture->renderEx(trans.position, sprite.offset, trans.rotation, trans.scale, sprite.tint);
+    }
+
+    inline void renderSprites_5(const Entity, const RenderLayer5&, const Sprite& sprite, const Transform2d& trans) {
         sprite.texture->renderEx(trans.position, sprite.offset, trans.rotation, trans.scale, sprite.tint);
     }
 
     inline void registerAll() {
-        Universe::onRender2d.registerSystem<Sprite, Transform2d>(renderSprites);
+        Universe::onRender2d
+            .registerSystem<RenderLayer0, Sprite, Transform2d>(renderSprites_0)
+            .registerSystem<RenderLayer1, Sprite, Transform2d>(renderSprites_1)
+            .registerSystem<RenderLayer2, Sprite, Transform2d>(renderSprites_2)
+            .registerSystem<RenderLayer3, Sprite, Transform2d>(renderSprites_3)
+            .registerSystem<RenderLayer4, Sprite, Transform2d>(renderSprites_4)
+            .registerSystem<RenderLayer5, Sprite, Transform2d>(renderSprites_5);
     }
 }
 

@@ -112,6 +112,7 @@ namespace Spawning {
             .addComponent(Bullet(attacker, baseDamage))
             .addComponent(Velocity(vel))
             .addComponent(Transient(lifetime))
+            .addComponent(RenderLayer1())
             .addComponent(FadeOverTime(fadeTime, beginFadeOffset))
             .addComponent(CollisionRect(16 * hitboxScale, 16 * hitboxScale, BitLayers::NONE, mask))
             .getEntity();
@@ -142,7 +143,7 @@ namespace UnitComponents {
         const float damageWidth = bar.damageBarProgress * bar.width;
         const float damageX = trans.position.x - (damageWidth * 0.5f) - (bar.width - damageWidth) * 0.5f;
 
-        Rectangle damageBar = {
+        const Rectangle damageBar = {
             damageX, y,
             damageWidth, bar.height,
         };

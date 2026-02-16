@@ -164,7 +164,7 @@ void debugButtons(const Entity, const Player&, const Transform2d& trans) {
         const auto desiredPos = trans.position + Vec2::randomDirection(200);
         Enemies::spawnMeanie(desiredPos);
     } else if (IsKeyPressed(KEY_PERIOD)) {
-        Logging::log("spawning circle");
+        Logging::log("spawning targeter");
         const auto desiredPos = trans.position + Vec2::randomDirection(50);
         Enemies::spawnTargeter(desiredPos, 2);
     }
@@ -220,6 +220,7 @@ int main() {
             .addComponent(Sprite(playerTexture))
             .addComponent(Transform2d())
             .addComponent(TilemapRenderTracker())
+            .addComponent(RenderLayer3())
             .addComponent(TilemapCollider(16, 16))
             .addComponent(CollisionRect(16, 16, BitLayers::PLAYER_LAYER, BitLayers::NONE))
             .addComponent(Health(200))

@@ -34,6 +34,10 @@ namespace AssetStore {
         man->registerResource(
             "target",
             new TextureResource("target.png"));
+
+        man->registerResource(
+            "shield-bubble",
+            new TextureResource("shield-bubble.png"));
     }
 
     // no more typos
@@ -63,6 +67,10 @@ namespace AssetStore {
 
     inline TextureResource* getTargetTexture() {
         return *Universe::getResourceManager()->getResource<TextureResource>("target");
+    }
+
+    inline TextureResource* getShieldBubbleTexture() {
+        return *Universe::getResourceManager()->getResource<TextureResource>("shield-bubble");
     }
 }
 
