@@ -316,13 +316,19 @@ namespace RenderingSystems {
     }
 
     inline void registerAll() {
+
+        // ensure render is called in order
+        const auto renderSprites = [] {
+            ECS::query<RenderLayer0, Sprite, Transform2d>(renderSprites_0);
+            ECS::query<RenderLayer1, Sprite, Transform2d>(renderSprites_1);
+            ECS::query<RenderLayer2, Sprite, Transform2d>(renderSprites_2);
+            ECS::query<RenderLayer3, Sprite, Transform2d>(renderSprites_3);
+            ECS::query<RenderLayer4, Sprite, Transform2d>(renderSprites_4);
+            ECS::query<RenderLayer5, Sprite, Transform2d>(renderSprites_5);
+        };
+
         Universe::onRender2d
-            .registerSystem<RenderLayer0, Sprite, Transform2d>(renderSprites_0)
-            .registerSystem<RenderLayer1, Sprite, Transform2d>(renderSprites_1)
-            .registerSystem<RenderLayer2, Sprite, Transform2d>(renderSprites_2)
-            .registerSystem<RenderLayer3, Sprite, Transform2d>(renderSprites_3)
-            .registerSystem<RenderLayer4, Sprite, Transform2d>(renderSprites_4)
-            .registerSystem<RenderLayer5, Sprite, Transform2d>(renderSprites_5);
+            .registerCallable(renderSprites);
     }
 }
 

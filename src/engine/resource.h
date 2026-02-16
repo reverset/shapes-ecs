@@ -50,10 +50,20 @@ private:
 
 class TextureResource : public Resource {
     std::optional<Texture2D> texture = std::nullopt;
+    std::optional<RenderTexture2D> renderTexture = std::nullopt;
 
 public:
     explicit TextureResource(const std::string &path)
         : Resource(path) {
+    }
+
+    [[nodiscard]] static TextureResource* generate(const std::function<RenderTexture2D()>& f) {
+        const auto rtex = new TextureResource("<generated>");
+
+        rtex->renderTexture = f();
+        rtex->texture = rtex->renderTexture->texture;
+
+        return rtex;
     }
 
     bool isLoaded() override {
@@ -65,11 +75,26 @@ public:
         texture = LoadTexture(path.c_str());
         if (!IsTextureValid(*texture)) {
             getLogger().logWarn("Texture not found! path=%s", path.c_str());
+            texture = std::nullopt;
         }
     }
 
     void doUnload() override {
-        UnloadTexture(*texture);
+        if (renderTexture.has_value()) {
+            UnloadRenderTexture(*renderTexture);
+        } else {
+            UnloadTexture(*texture);
+        }
+    }
+
+    bool isRenderTexture() const {
+        return renderTexture.has_value();
+    }
+
+    void updateTextureFromRenderTexture() {
+        if (!renderTexture.has_value()) return;
+
+        texture = renderTexture->texture;
     }
 
     [[nodiscard]] std::optional<Texture2D> getTexture() const {
@@ -95,6 +120,50 @@ public:
             {sw*0.5f, sh*0.5f},
             rotation * RAD2DEG,
             tint);
+    }
+};
+
+class FragmentShader : public Resource {
+    std::optional<Shader> shader = std::nullopt;
+
+public:
+    explicit FragmentShader(const std::string &path)
+        : Resource(path) {
+    }
+
+    bool isLoaded() override {
+        return shader.has_value() && IsShaderValid(*shader);
+    }
+
+    void doLoad() override {
+        getLogger().log("Loading fragment shader. path=%s", path.c_str());
+        shader = LoadShader(nullptr, path.c_str());
+        if (!IsShaderValid(*shader)) {
+            getLogger().logWarn("Shader not found! path=%s", path.c_str());
+            shader = std::nullopt;
+        }
+    }
+
+    void doUnload() override {
+        UnloadShader(*shader);
+    }
+
+    void begin() const {
+        if (!shader.has_value()) {
+            Logging::log("Attempted to use nullopt shader!");
+            return;
+        }
+        BeginShaderMode(*shader);
+    }
+
+    void end() const {
+        EndShaderMode();
+    }
+
+    void with(const std::function<void()>& f) const {
+        begin();
+        f();
+        end();
     }
 };
 

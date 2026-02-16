@@ -38,6 +38,19 @@ namespace AssetStore {
         man->registerResource(
             "shield-bubble",
             new TextureResource("shield-bubble.png"));
+
+        man->registerResource(
+            "pulse-effect",
+            TextureResource::generate([] {
+                const auto rtex = LoadRenderTexture(16 ,16);
+                BeginTextureMode(rtex);
+
+                DrawCircle(8, 8, 8, WHITE);
+
+                EndTextureMode();
+
+                return rtex;
+            }));
     }
 
     // no more typos
@@ -71,6 +84,10 @@ namespace AssetStore {
 
     inline TextureResource* getShieldBubbleTexture() {
         return *Universe::getResourceManager()->getResource<TextureResource>("shield-bubble");
+    }
+
+    inline TextureResource* getPulseEffect() {
+        return *Universe::getResourceManager()->getResource<TextureResource>("pulse-effect");
     }
 }
 

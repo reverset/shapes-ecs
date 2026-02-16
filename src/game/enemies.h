@@ -39,7 +39,32 @@ struct Targeter : Component<Targeter> {
     }
 };
 
+struct Pulse : Component<Pulse> {
+    COMPONENT_STORAGE(Pulse);
+
+    std::uint32_t damage;
+
+    explicit Pulse(const std::uint32_t damage) : damage(damage) {}
+};
+
 namespace Enemies {
+    inline Entity spawnPulse(const Vec2 pos, const std::uint32_t dmg, const Color color) {
+        constexpr auto fadeDuration = Duration::ofSeconds(1.0f);
+
+        const auto texture = AssetStore::getPulseEffect();
+        auto sprite = Sprite(texture);
+        sprite.tint = color;
+
+        return Universe::getEntityStorage().makeEntity()
+            .addComponent(Pulse(dmg))
+            .addComponent(Transform2d(pos, 0.0f, 1.5f))
+            .addComponent(std::move(sprite))
+            .addComponent(RenderLayer4())
+            .addComponent(FadeOverTime(fadeDuration))
+            .addComponent(Transient(fadeDuration))
+            .getEntity();
+    }
+
     inline Entity spawnMeanie(const Vec2 pos) {
         const auto sprite = AssetStore::getMeanieTexture();
         return Universe::getEntityStorage().makeEntity()
@@ -105,7 +130,9 @@ namespace Enemies {
             .getEntity();
     }
 
-    inline void targetUpdate(const Entity, Target& circle) {
+    inline void targetUpdate(const Entity, Target& circle, const Transform2d& trans) {
+        constexpr std::uint32_t damage = 10;
+
         if (circle.lastTargetUpdate.hasElapsed(circle.moveInterval)) {
 
             circle.lastTargetUpdate = Timestamp::now();
@@ -116,6 +143,10 @@ namespace Enemies {
             const auto playerTrans = std::get<1>(*player);
 
             circle.target = playerTrans->position;
+
+            Universe::defer([=] {
+                spawnPulse(trans.position, damage, RED);
+            });
         }
 
     }
@@ -193,7 +224,7 @@ namespace Enemies {
     inline void registerAll() {
         Universe::onIrregularUpdate
             .registerSystem<Meanie, Transform2d, Velocity>(meanieThink)
-            .registerSystem<Target>(targetUpdate);
+            .registerSystem<Target, Transform2d>(targetUpdate);
 
         Universe::onUpdate
             .registerSystem<Target, Transform2d, Velocity>(updateTargetVel);
