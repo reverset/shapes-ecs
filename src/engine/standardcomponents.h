@@ -117,6 +117,7 @@ struct ConstantForce : Component<ConstantForce> {
     }
 };
 
+// TODO, may not be needed any longer
 struct CollisionRect : Component<CollisionRect> {
     COMPONENT_STORAGE(CollisionRect);
 

@@ -102,26 +102,33 @@ struct DamageVolume : Component<DamageVolume> {
     COMPONENT_STORAGE(DamageVolume);
 
     Vec2 dimensions;
-    std::int32_t ignoreMagicNumber;
+    BitLayers::Type mask;
     std::uint32_t damage;
     Duration hitInterval;
     Timestamp lastHit = Timestamp::longAgo();
 
     explicit DamageVolume(
-        const std::int32_t ignoreMagicNumber,
+        const BitLayers::Type mask,
         const std::uint32_t damage,
         const Vec2 dimensions,
         const Duration hitInterval
-        ) : dimensions(dimensions), ignoreMagicNumber(ignoreMagicNumber), damage(damage), hitInterval(hitInterval) {}
+        ) : dimensions(dimensions), mask(mask), damage(damage), hitInterval(hitInterval) {}
 };
 
 struct DamageReceiverVolume : Component<DamageReceiverVolume> {
     COMPONENT_STORAGE(DamageReceiverVolume);
 
     Vec2 dimensions;
-    std::int32_t magicNumber;
+    BitLayers::Type layer;
 
-    explicit DamageReceiverVolume(const std::int32_t magicNumber, const Vec2 dimensions) : dimensions(dimensions), magicNumber(magicNumber) {}
+    explicit DamageReceiverVolume(const BitLayers::Type layer, const Vec2 dimensions) : dimensions(dimensions), layer(layer) {}
+};
+
+struct OnDamageDealtByVolume : Event<OnDamageDealtByVolume> {
+    EVENT_STORAGE(OnDamageDealtByVolume);
+
+    Entity attacker;
+    Entity victim;
 };
 
 namespace Spawning {
@@ -141,6 +148,7 @@ namespace Spawning {
             .addComponent(Transient(lifetime))
             .addComponent(RenderLayer1())
             .addComponent(FadeOverTime(fadeTime, beginFadeOffset))
+            .addComponent(DamageVolume(mask, baseDamage, {16 * hitboxScale, 16 *  hitboxScale}, Duration::ofSeconds(1.0)))
             .addComponent(CollisionRect(16 * hitboxScale, 16 * hitboxScale, BitLayers::NONE, mask))
             .getEntity();
     }
@@ -215,12 +223,11 @@ namespace UnitComponents {
             .destroyEntity(e);
     }
 
-    inline void checkForDamageViaVolumes(const Entity, DamageVolume& damageVolume, const Transform2d& trans) {
-        ECS::query<DamageReceiverVolume, Transform2d, Health>([&](const Entity, const DamageReceiverVolume& damageReceiver, const Transform2d& trans2, Health& health) {
-            if (BitLayers::isBitIn(damageVolume.ignoreMagicNumber, damageReceiver.magicNumber)) return;
-            if (!damageVolume.lastHit.hasElapsed(damageVolume.hitInterval)) return;
+    inline void checkForDamageViaVolumes(const Entity e1, DamageVolume& damageVolume, const Transform2d& trans) {
+        if (!damageVolume.lastHit.hasElapsed(damageVolume.hitInterval)) return;
 
-            damageVolume.lastHit = Timestamp::now();
+        ECS::query<DamageReceiverVolume, Transform2d, Health>([&](const Entity e2, const DamageReceiverVolume& damageReceiver, const Transform2d& trans2, Health& health) {
+            if (!BitLayers::checkMask(damageVolume.mask, damageReceiver.layer)) return;
 
             const auto rect1 = GameUtil::centeredRect(
                 trans.position.x, trans.position.y,
@@ -230,17 +237,44 @@ namespace UnitComponents {
                 damageReceiver.dimensions.x, damageReceiver.dimensions.y);
 
             if (CheckCollisionRecs(rect1, rect2)) {
+                damageVolume.lastHit = Timestamp::now();
                 health.damage(damageVolume.damage);
+
+                OnDamageDealtByVolume evt = {
+                    .attacker = e1,
+                    .victim = e2,
+                };
+
+                evt.send();
             }
+        });
+    }
+
+    inline void debugVolumes() {
+        ECS::query<DamageReceiverVolume, Transform2d>([](const Entity, const DamageReceiverVolume& damageReceiver, const Transform2d& trans) {
+            const auto rect1 = GameUtil::centeredRect(
+               trans.position.x, trans.position.y,
+               damageReceiver.dimensions.x, damageReceiver.dimensions.y);
+
+            DrawRectangleRoundedLinesEx(rect1, 0.2, 4, 2, PINK);
+        });
+
+        ECS::query<DamageVolume, Transform2d>([](const Entity, const DamageVolume& damageVolume, const Transform2d& trans) {
+            const auto rect1 = GameUtil::centeredRect(
+               trans.position.x, trans.position.y,
+               damageVolume.dimensions.x, damageVolume.dimensions.y);
+
+            DrawRectangleRoundedLinesEx(rect1, 0.2, 4, 2, RED);
         });
     }
 
     inline void registerAll() {
         Universe::onUpdate
-            .registerSystem<Health>(deathEventEmitter)
-            .registerSystem<DamageVolume, Transform2d>(checkForDamageViaVolumes);
+            .registerSystem<DamageVolume, Transform2d>(checkForDamageViaVolumes)
+            .registerSystem<Health>(deathEventEmitter);
 
         Universe::onLateRender2d
+            // .registerCallable(debugVolumes)
             .registerSystem<HealthBar, Health, Transform2d>(renderHealthBars);
 
         Universe::onFinalFrameUpdate

@@ -91,13 +91,9 @@ void handleBulletHitTile(const TilemapCollisionEvent& e) {
     });
 }
 
-// this system to work for anything.
-void handleBulletHitUnit(const ColliderOverlapEvent& event) {
-    ECS::queryComponentsFor<Bullet>(event.a, [&](const Entity bullet, const Bullet& bulletInfo) {
-        ECS::queryComponentsFor<Health>(event.b, [&](const Entity, Health& health) {
-            health.damage(bulletInfo.baseDamage);
-        });
-
+void handleBulletHitWithVolume(const OnDamageDealtByVolume& e) {
+    ECS::queryComponentsFor<Bullet, Transform2d>(e.attacker, [](const Entity bullet, const Bullet&, const Transform2d& trans) {
+        Particles::sparkle(trans.position);
         Universe::getEntityStorage().destroyEntity(bullet);
     });
 }
@@ -208,7 +204,7 @@ int main() {
         //     .registerSystem<Tilemap, Transform2d>(TilemapSystems::renderTilemapsChunked);
 
         TilemapCollisionEvent::listen(handleBulletHitTile);
-        ColliderOverlapEvent::listen(handleBulletHitUnit);
+        OnDamageDealtByVolume::listen(handleBulletHitWithVolume);
 
         const auto playerTexture = AssetStore::getPlayerTexture();
 

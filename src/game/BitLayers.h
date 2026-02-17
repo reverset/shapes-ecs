@@ -17,8 +17,8 @@ namespace BitLayers {
 
     constexpr Type ALL = std::numeric_limits<Type>::max();
 
-    constexpr bool isBitIn(const std::int32_t mask, const Type layer) {
-        return (1u << mask) & layer;
+    constexpr bool checkMask(const Type mask, const Type layer) {
+        return (mask & layer) != 0;
     }
 }
 

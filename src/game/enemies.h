@@ -49,7 +49,6 @@ struct Pulse : Component<Pulse> {
 
 namespace Enemies {
 
-    // TODO, after dealing damage, disable damage!
     inline Entity spawnPulse(const Vec2 pos, const std::uint32_t dmg, const Color color) {
         constexpr auto fadeDuration = Duration::ofSeconds(1.0f);
 
@@ -62,7 +61,7 @@ namespace Enemies {
             .addComponent(Transform2d(pos, 0.0f, 1.5f))
             .addComponent(std::move(sprite))
             .addComponent(RenderLayer4())
-            .addComponent(DamageVolume(BitLayers::ENEMY_LAYER, dmg, {10, 10}, Duration::ofSeconds(1.0)))
+            .addComponent(DamageVolume(BitLayers::PLAYER_LAYER, dmg, {10, 10}, Duration::ofSeconds(1.0)))
             .addComponent(FadeOverTime(fadeDuration))
             .addComponent(Transient(fadeDuration))
             .getEntity();
@@ -80,6 +79,7 @@ namespace Enemies {
             .addComponent(HealthBar())
             .addComponent(Velocity())
             .addComponent(RenderLayer1())
+            .addComponent(DamageReceiverVolume(BitLayers::ENEMY_LAYER, sprite->getDimensions()))
             .addComponent(RemoveOnDeath())
             .getEntity();
     }
@@ -197,6 +197,7 @@ namespace Enemies {
             .addComponent(std::move(sprite))
             .addComponent(RenderLayer1())
             .addComponent(Attached(shield))
+            .addComponent(DamageReceiverVolume(BitLayers::ENEMY_LAYER, sprite.texture->getDimensions()))
             .addComponent(RemoveOnDeath([shield](const Entity e) {
                 ECS::queryComponentsFor<Targeter>(e, [](const Entity, const Targeter& ta) {
                     auto& es = Universe::getEntityStorage();

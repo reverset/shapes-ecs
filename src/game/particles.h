@@ -20,7 +20,6 @@ namespace Particles {
         for (std::size_t i = 0; i < particles; i++) {
             constexpr auto lifetime = Duration::ofSeconds(1.0);
 
-
             Universe::getEntityStorage()
                 .makeEntity()
                     .addComponent(Transform2d(pos + Vec2::randomDirection(3)))
@@ -28,6 +27,7 @@ namespace Particles {
                     .addComponent(ConstantForce(0, 100))
                     .addComponent(Sprite(sparkleTexture))
                     .addComponent(FadeOverTime(lifetime))
+                    .addComponent(RenderLayer5())
                     .addComponent(Transient(lifetime));
         }
     }

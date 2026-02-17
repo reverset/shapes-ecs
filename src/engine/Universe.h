@@ -18,8 +18,6 @@
 #define ASSERT(x, msg)
 #endif
 
-
-
 constexpr Color DARKERGRAY = GameUtil::colorLerp(DARKGRAY, BLACK, 0.5);
 
 namespace Universe {
@@ -30,8 +28,8 @@ namespace Universe {
 
     inline Schedule prepaint;
 
-    inline Schedule onEarlyRender2d; // temporary solution until render ordering is implemented
-    inline Schedule onRender2d; // idea... implement a system that will then query the other rendering systems in 'order'
+    inline Schedule onEarlyRender2d;
+    inline Schedule onRender2d;
     inline Schedule onLateRender2d;
 
     inline Schedule onRenderUi;

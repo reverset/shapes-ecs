@@ -87,7 +87,7 @@ public:
         }
     }
 
-    bool isRenderTexture() const {
+    [[nodiscard]] bool isRenderTexture() const {
         return renderTexture.has_value();
     }
 
@@ -99,6 +99,14 @@ public:
 
     [[nodiscard]] std::optional<Texture2D> getTexture() const {
         return texture;
+    }
+
+    [[nodiscard]] Vec2 getDimensions() const {
+        if (texture.has_value()) {
+            return {static_cast<float>(texture->width), static_cast<float>(texture->height)};
+        }
+
+        return {0, 0};
     }
 
     void render(const Vec2 pos, const float rotation, const float scale, const Color& tint) {
