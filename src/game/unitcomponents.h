@@ -1,6 +1,7 @@
 #ifndef GAME_UNITCOMPONENTS_H
 #define GAME_UNITCOMPONENTS_H
 
+#include "assetstore.h"
 #include "BitLayers.h"
 #include "raylib.h"
 
@@ -137,11 +138,20 @@ namespace Spawning {
         constexpr auto beginFadeOffset = Duration::ofSeconds(1.0);
         constexpr auto fadeTime = lifetime - beginFadeOffset;
         
-        const auto sprite = *Universe::getResourceManager()->getResource<TextureResource>(spriteName);
+        const auto texture = *Universe::getResourceManager()->getResource<TextureResource>(spriteName);
+
+        // const auto outlineShader = AssetStore::getOutlineShader();
+        // outlineShader->setField("outlineSize", 2.0f);
+        // outlineShader->setField("textureSize", Vec2{16, 16});
+        // outlineShader->setField("outlineColor", BLUE);
+
+        auto sprite = Sprite(texture);
+            // .withShader(outlineShader);
+        sprite.tint = tint;
 
         auto& store = Universe::getEntityStorage();
         return store.makeEntity()
-            .addComponent(Sprite(sprite, tint))
+            .addComponent(std::move(sprite))
             .addComponent(Transform2d(pos, vel.toAngle(), 0.8f))
             .addComponent(Bullet(attacker, baseDamage))
             .addComponent(Velocity(vel))

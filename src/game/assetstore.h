@@ -51,6 +51,14 @@ namespace AssetStore {
 
                 return rtex;
             }));
+
+        man->registerResource(
+            "test-fs",
+            new FragmentShader("shaders/test.fs"));
+
+        man->registerResource(
+            "outline-fs",
+            new FragmentShader("shaders/outline.fs"));
     }
 
     // no more typos
@@ -88,6 +96,14 @@ namespace AssetStore {
 
     inline TextureResource* getPulseEffect() {
         return *Universe::getResourceManager()->getResource<TextureResource>("pulse-effect");
+    }
+
+    inline FragmentShader* getTestShader() {
+        return *Universe::getResourceManager()->getResource<FragmentShader>("test-fs");
+    }
+
+    inline FragmentShader* getOutlineShader() {
+        return *Universe::getResourceManager()->getResource<FragmentShader>("outline-fs");
     }
 }
 

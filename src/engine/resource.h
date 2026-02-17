@@ -114,6 +114,7 @@ public:
     }
 
     void renderEx(const Vec2 pos, const Vec2 offset, const float rotation, const float scale, const Color& tint) {
+        // TODO, draw default 'missing texture' texture
         if (!isLoaded()) throw std::runtime_error("attempt to render unloaded resource");
 
         const auto w = static_cast<float>(texture->width);
@@ -134,6 +135,10 @@ public:
 class FragmentShader : public Resource {
     std::optional<Shader> shader = std::nullopt;
 
+    static Logging::Logger& getLogger() {
+        static Logging::Logger logger = NEW_LOGGER(FragmentShader);
+        return logger;
+    }
 public:
     explicit FragmentShader(const std::string &path)
         : Resource(path) {
@@ -156,9 +161,44 @@ public:
         UnloadShader(*shader);
     }
 
+    void setField(const std::string_view& fieldName, const float value) const {
+        if (!shader.has_value()) {
+            getLogger().logWarn("Shader not found, but field was set");
+            return;
+        }
+
+        const int index = GetShaderLocation(*shader, fieldName.data());
+
+        SetShaderValue(*shader, index, &value, SHADER_UNIFORM_FLOAT);
+    }
+
+    void setField(const std::string_view& fieldName, const Color value) const {
+        if (!shader.has_value()) {
+            getLogger().logWarn("Shader not found, but field was set");
+            return;
+        }
+
+        const int index = GetShaderLocation(*shader, fieldName.data());
+
+        SetShaderValue(*shader, index, &value, SHADER_UNIFORM_VEC4);
+    }
+
+    void setField(const std::string_view& fieldName, const Vec2 value) const {
+        if (!shader.has_value()) {
+            getLogger().logWarn("Shader not found, but field was set");
+            return;
+        }
+
+        const int index = GetShaderLocation(*shader, fieldName.data());
+
+        const Vector2 r = value;
+
+        SetShaderValue(*shader, index, &r, SHADER_UNIFORM_VEC2);
+    }
+
     void begin() const {
         if (!shader.has_value()) {
-            Logging::log("Attempted to use nullopt shader!");
+            getLogger().logWarn("Attempted to use nullopt shader!");
             return;
         }
         BeginShaderMode(*shader);

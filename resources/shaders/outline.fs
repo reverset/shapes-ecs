@@ -1,5 +1,7 @@
 #version 330
 
+// https://www.raylib.com/examples/shaders/loader.html?name=shaders_texture_outline
+
 // Input vertex attributes (from vertex shader)
 in vec2 fragTexCoord;
 in vec4 fragColor;

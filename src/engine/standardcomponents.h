@@ -34,6 +34,7 @@ struct Sprite : Component<Sprite> {
     TextureResource* texture;
     Vec2 offset = {0, 0};
     Color tint = WHITE;
+    FragmentShader* shader = nullptr;
 
     explicit Sprite(TextureResource* texture) {
         this->texture = texture;
@@ -53,6 +54,30 @@ struct Sprite : Component<Sprite> {
         this->texture = texture;
         this->offset = offset;
         this->tint = tint;
+    }
+
+    Sprite& withShader(FragmentShader* shad) {
+        this->shader = shad;
+
+        return *this;
+    }
+
+    [[nodiscard]] FragmentShader* getShader() const {
+        return shader;
+    }
+
+    [[nodiscard]] bool hasShader() const {
+        return shader != nullptr;
+    }
+
+    void render(const Vec2 pos, const float rotation, const float scale) const {
+        if (hasShader()) {
+            getShader()->begin();
+            texture->renderEx(pos, offset, rotation, scale, tint);
+            getShader()->end();
+        } else {
+            texture->renderEx(pos, offset, rotation, scale, tint);
+        }
     }
 };
 
@@ -293,27 +318,27 @@ namespace RenderingSystems {
 
     // maybe make a macro
     inline void renderSprites_0(const Entity, const RenderLayer0&, const Sprite& sprite, const Transform2d& trans) {
-        sprite.texture->renderEx(trans.position, sprite.offset, trans.rotation, trans.scale, sprite.tint);
+        sprite.render(trans.position, trans.rotation, trans.scale);
     }
 
     inline void renderSprites_1(const Entity, const RenderLayer1&, const Sprite& sprite, const Transform2d& trans) {
-        sprite.texture->renderEx(trans.position, sprite.offset, trans.rotation, trans.scale, sprite.tint);
+        sprite.render(trans.position, trans.rotation, trans.scale);
     }
 
     inline void renderSprites_2(const Entity, const RenderLayer2&, const Sprite& sprite, const Transform2d& trans) {
-        sprite.texture->renderEx(trans.position, sprite.offset, trans.rotation, trans.scale, sprite.tint);
+        sprite.render(trans.position, trans.rotation, trans.scale);
     }
 
     inline void renderSprites_3(const Entity, const RenderLayer3&, const Sprite& sprite, const Transform2d& trans) {
-        sprite.texture->renderEx(trans.position, sprite.offset, trans.rotation, trans.scale, sprite.tint);
+        sprite.render(trans.position, trans.rotation, trans.scale);
     }
 
     inline void renderSprites_4(const Entity, const RenderLayer4&, const Sprite& sprite, const Transform2d& trans) {
-        sprite.texture->renderEx(trans.position, sprite.offset, trans.rotation, trans.scale, sprite.tint);
+        sprite.render(trans.position, trans.rotation, trans.scale);
     }
 
     inline void renderSprites_5(const Entity, const RenderLayer5&, const Sprite& sprite, const Transform2d& trans) {
-        sprite.texture->renderEx(trans.position, sprite.offset, trans.rotation, trans.scale, sprite.tint);
+        sprite.render(trans.position, trans.rotation, trans.scale);
     }
 
     inline void registerAll() {
