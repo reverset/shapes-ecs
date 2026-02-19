@@ -71,9 +71,8 @@ struct Vec2 {
         const float x = std::cos(angle);
         const float y = std::sin(angle);
 
-        const Vec2 res = {x, y};
-        const float desiredMag = magnitude / res.magnitude(); // normalize then multiply by magnitude
-        return res * desiredMag;
+        // no normalization since the mag is already 1
+        return Vec2{x, y} * magnitude;
     }
 
     static constexpr Vec2 randomDirection(const float magnitude) {
