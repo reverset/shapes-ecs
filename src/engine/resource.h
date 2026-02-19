@@ -161,7 +161,7 @@ public:
         UnloadShader(*shader);
     }
 
-    void setField(const std::string_view& fieldName, const float value) const {
+    void setField(const std::string_view fieldName, const float value) const {
         if (!shader.has_value()) {
             getLogger().logWarn("Shader not found, but field was set");
             return;
@@ -172,7 +172,7 @@ public:
         SetShaderValue(*shader, index, &value, SHADER_UNIFORM_FLOAT);
     }
 
-    void setField(const std::string_view& fieldName, const Color value) const {
+    void setField(const std::string_view fieldName, const Color value) const {
         if (!shader.has_value()) {
             getLogger().logWarn("Shader not found, but field was set");
             return;
@@ -183,7 +183,7 @@ public:
         SetShaderValue(*shader, index, &value, SHADER_UNIFORM_VEC4);
     }
 
-    void setField(const std::string_view& fieldName, const Vec2 value) const {
+    void setField(const std::string_view fieldName, const Vec2 value) const {
         if (!shader.has_value()) {
             getLogger().logWarn("Shader not found, but field was set");
             return;
@@ -212,6 +212,45 @@ public:
         begin();
         f();
         end();
+    }
+};
+
+class TextFont : public Resource {
+    std::optional<Font> font;
+
+    [[nodiscard]] static Logging::Logger& getLogger() {
+        static Logging::Logger logger = NEW_LOGGER(TextFont);
+        return logger;
+    }
+
+public:
+    explicit TextFont(const std::string &path)
+        : Resource(path) {
+    }
+
+    bool isLoaded() override {
+        return font.has_value() && IsFontValid(*font);
+    }
+
+    void doLoad() override {
+        font = LoadFont(path.c_str());
+        if (!isLoaded()) {
+            getLogger().logWarn("Font not found, using default.");
+            font = GetFontDefault();
+        }
+    }
+
+    [[nodiscard]] bool isDefaultFont() {
+        return isLoaded() && font->texture.id == GetFontDefault().texture.id;
+    }
+
+    void doUnload() override {
+        if (isDefaultFont()) return;
+        UnloadFont(*font);
+    }
+
+    [[nodiscard]] Vec2 measure(const std::string_view text, float fontSize, float spacing) {
+        return MeasureTextEx(*font, text.data(), fontSize, spacing);
     }
 };
 
