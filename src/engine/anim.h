@@ -15,15 +15,15 @@ struct Tween {
     Timestamp startTime = Timestamp::longAgo();
     Duration desiredLength;
 
-    explicit Tween(Duration length, const Tweener& tweener) 
-        : desiredLength(length), tweener(tweener) {}
+    explicit Tween(const Duration length, const Tweener& tweener)
+        : tweener(tweener), desiredLength(length) {}
 
     void start() {
         startTime = Timestamp::now();
     }
 
     [[nodiscard]] bool hasStarted() const {
-        return startTime == Timestamp::longAgo();
+        return startTime != Timestamp::longAgo();
     }
 
     [[nodiscard]] bool isFinished() const {
@@ -46,7 +46,6 @@ struct Tween {
 namespace Tweeners {
     [[nodiscard]] constexpr std::function<double(double)> lerp(const double start, const double end) {
         return [=](const double dt) {
-            Logging::log("WHAT: %f, %f, %f", start, end, dt);
             return GameUtil::lerp(start, end, dt);
         };
     }

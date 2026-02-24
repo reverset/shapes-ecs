@@ -235,33 +235,8 @@ int main() {
             COMPONENT_STORAGE(Test);
             
             explicit Test() 
-                : anim(Tween<double>(Duration::ofSeconds(10.0), Tweeners::lerp(0, 100))) {}
+                : anim(Tween(Duration::ofSeconds(10.0), Tweeners::lerp(0, 100))) {}
         };
-
-        es.makeEntity()
-            .addComponent(Test());
-
-        // TODO FIXME!!!!!
-        Universe::onUpdate
-            .registerSystem<Test>([](const Entity e, Test& test) {
-                if (!test.anim.hasStarted()) test.anim.start();
-
-                constexpr Duration dur = Duration::ofSeconds(10.0);
-
-                const double val = *test.anim.calculate();
-                Logging::log("VAL: %f", val);
-                Logging::log("TIME: %f", Universe::getGameTime());
-                Logging::log("ELAPSED: %d", test.anim.startTime.hasElapsed(dur));
-                Logging::log("DURATION: %f", dur.toSeconds());
-                Logging::log("WHATS: %f", Universe::getGameTime() > dur.toSeconds());
-                Logging::log("TIME: %d", test.anim.startTime.moment);
-
-                if (test.anim.isFinished()) {
-                    Logging::log("????");
-                    Universe::getEntityStorage()
-                        .destroyEntity(e);
-                }
-            });
 
     }, [] {});
     // }, [] {});
