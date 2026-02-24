@@ -31,6 +31,7 @@ add_executable(game
         src/game/unitcomponents.h
         src/game/assetstore.h
         src/engine/Universe.cpp
+        src/engine/anim.h
         src/engine/event.h
         src/engine/Universe.h
         src/engine/vec.h

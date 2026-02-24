@@ -109,10 +109,10 @@ namespace Universe {
 } // Universe
 
 struct Timestamp {
-    double start;
+    double moment;
 
     explicit Timestamp(const double time) {
-        start = time;
+        moment = time;
     }
 
     [[nodiscard]] constexpr static Timestamp longAgo() {
@@ -126,19 +126,23 @@ struct Timestamp {
     }
 
     [[nodiscard]] bool hasElapsed(const Duration dur) const {
-        return Universe::getGameTime() > start + dur.toSeconds();
+        return Universe::getGameTime() > moment + dur.toSeconds();
     }
 
     [[nodiscard]] double normalizedElapsed(Duration max) const {
         return GameUtil::clamp(
-            (Universe::getGameTime() - start) / max.toSeconds(), 
+            (Universe::getGameTime() - moment) / max.toSeconds(), 
             0.0,
             1.0
         );
     }
 
     [[nodiscard]] Timestamp shift(const Duration dur) const {
-        return Timestamp (start + dur.toSeconds());
+        return Timestamp (moment + dur.toSeconds());
+    }
+
+    constexpr bool operator==(const Timestamp& other) const {
+        return GameUtil::isApprox(moment, other.moment);
     }
 };
 
