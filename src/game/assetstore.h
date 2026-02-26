@@ -5,6 +5,30 @@
 #include "../engine/Universe.h"
 
 namespace AssetStore {
+
+    TextureResource* getHealingHeartRawTexture();
+    inline void loadHealingHeart() {
+        const auto man = Universe::getResourceManager();
+
+        const auto heart = getHealingHeartRawTexture();
+
+        man->registerResource(
+            "healing-heart",
+            TextureResource::generate([&] {
+                const auto rtex = LoadRenderTexture(32, 32);
+                
+                BeginTextureMode(rtex);
+                ClearBackground(BLANK);
+                
+                heart->render({16, 16}, 0.0f, 1.0f, PINK);
+
+                EndTextureMode();
+
+                return rtex;
+            }
+        ));
+    }
+
     inline void initialLoadAll() {
         const auto man = Universe::getResourceManager();
         man->registerResource(
@@ -42,7 +66,7 @@ namespace AssetStore {
         man->registerResource(
             "pulse-effect",
             TextureResource::generate([] {
-                const auto rtex = LoadRenderTexture(16 ,16);
+                const auto rtex = LoadRenderTexture(16, 16);
                 BeginTextureMode(rtex);
 
                 DrawCircle(8, 8, 8, WHITE);
@@ -59,6 +83,12 @@ namespace AssetStore {
         man->registerResource(
             "outline-fs",
             new FragmentShader("shaders/outline.fs"));
+
+        man->registerResource(
+            "healing-heart-fs",
+            new FragmentShader("shaders/healing_heart.fs"));
+
+        loadHealingHeart();
     }
 
     // no more typos
@@ -98,12 +128,24 @@ namespace AssetStore {
         return *Universe::getResourceManager()->getResource<TextureResource>("pulse-effect");
     }
 
+    inline TextureResource* getHealingHeartRawTexture() { // TODO
+        return *Universe::getResourceManager()->getResource<TextureResource>("spark");
+    }
+
+    inline TextureResource* getHealingHeart() {
+        return *Universe::getResourceManager()->getResource<TextureResource>("healing-heart");
+    }
+
     inline FragmentShader* getTestShader() {
         return *Universe::getResourceManager()->getResource<FragmentShader>("test-fs");
     }
 
     inline FragmentShader* getOutlineShader() {
         return *Universe::getResourceManager()->getResource<FragmentShader>("outline-fs");
+    }
+
+    inline FragmentShader* getHealingHeartShader() {
+        return *Universe::getResourceManager()->getResource<FragmentShader>("healing-heart-fs");
     }
 }
 

@@ -125,6 +125,10 @@ struct DamageReceiverVolume : Component<DamageReceiverVolume> {
     explicit DamageReceiverVolume(const BitLayers::Type layer, const Vec2 dimensions) : dimensions(dimensions), layer(layer) {}
 };
 
+struct HealingHeart : Component<HealingHeart> {
+    COMPONENT_STORAGE(HealingHeart);   
+};
+
 struct OnDamageDealtByVolume : Event<OnDamageDealtByVolume> {
     EVENT_STORAGE(OnDamageDealtByVolume);
 
@@ -133,6 +137,20 @@ struct OnDamageDealtByVolume : Event<OnDamageDealtByVolume> {
 };
 
 namespace Spawning {
+    inline Entity spawnHealingHeart(const std::uint32_t heal, const Vec2 pos, const Vec2 vel) {
+        const auto texture = AssetStore::getHealingHeart();
+        
+        auto sprite = Sprite(texture)
+            .withShader(AssetStore::getHealingHeartShader());
+
+        return Universe::getEntityStorage().makeEntity()
+            .addComponent(HealingHeart())
+            .addComponent(std::move(sprite))
+            .addComponent(RenderLayer4())
+            .addComponent(Transform2d(pos, 0.0f, 3.0f))
+            .getEntity();
+    }
+
     inline Entity spawnBullet(const Entity attacker, const std::uint32_t baseDamage, const Vec2 pos, const Vec2 vel, const float hitboxScale, const BitLayers::Type mask, const std::string& spriteName = "bullet", const Color tint = WHITE) {
         constexpr auto lifetime = Duration::ofSeconds(2.0);
         constexpr auto beginFadeOffset = Duration::ofSeconds(1.0);
@@ -145,9 +163,8 @@ namespace Spawning {
         // outlineShader->setField("textureSize", Vec2{16, 16});
         // outlineShader->setField("outlineColor", BLUE);
 
-        auto sprite = Sprite(texture);
+        auto sprite = Sprite(texture, tint);
             // .withShader(outlineShader);
-        sprite.tint = tint;
 
         auto& store = Universe::getEntityStorage();
         return store.makeEntity()

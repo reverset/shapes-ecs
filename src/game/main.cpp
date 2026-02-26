@@ -155,6 +155,7 @@ void loadMap() {
     // }
 }
 
+#ifndef NDEBUG
 void debugButtons(const Entity, const Player&, const Transform2d& trans) {
     // auto& es = Universe::getEntityStorage();
     if (IsKeyPressed(KEY_SLASH)) {
@@ -165,8 +166,12 @@ void debugButtons(const Entity, const Player&, const Transform2d& trans) {
         Logging::log("spawning targeter");
         const auto desiredPos = trans.position + Vec2::randomDirection(50);
         Enemies::spawnTargeter(desiredPos, 2);
+    } else if (IsKeyPressed(KEY_COMMA)) {
+        Logging::log("spawning heart");
+        Spawning::spawnHealingHeart(10, trans.position, Vec2::zero());
     }
 }
+#endif
 
 int main() {
     // TODO update gamepad mapping for linux ... MIGHT BE MORE PROBLEMATIC THAN ANTICIPATED
@@ -198,8 +203,10 @@ int main() {
         Universe::onRenderUi
             .registerSystem<PlayerHealthBar, Health>(renderPlayerHealthBar);
 
+        #ifndef NDEBUG
         Universe::onFinalFrameUpdate
             .registerSystem<Player, Transform2d>(debugButtons);
+        #endif
 
         // Universe::onEarlyRender2d
         //     .registerSystem<Tilemap, Transform2d>(TilemapSystems::renderTilemapsChunked);

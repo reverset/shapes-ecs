@@ -53,13 +53,11 @@ namespace Enemies {
         constexpr auto fadeDuration = Duration::ofSeconds(1.0f);
 
         const auto texture = AssetStore::getPulseEffect();
-        auto sprite = Sprite(texture);
-        sprite.tint = color;
 
         return Universe::getEntityStorage().makeEntity()
             .addComponent(Pulse(dmg))
             .addComponent(Transform2d(pos, 0.0f, 1.5f))
-            .addComponent(std::move(sprite))
+            .addComponent(Sprite(texture, color))
             .addComponent(RenderLayer4())
             .addComponent(DamageVolume(BitLayers::PLAYER_LAYER, dmg, {10, 10}, Duration::ofSeconds(1.0)))
             .addComponent(FadeOverTime(fadeDuration))
@@ -120,13 +118,10 @@ namespace Enemies {
     inline Entity spawnTarget(const Vec2 pos) {
         const auto texture = AssetStore::getTargetTexture();
 
-        auto sprite = Sprite(texture);
-        sprite.tint = RED;
-
         return Universe::getEntityStorage().makeEntity()
             .addComponent(Target())
             .addComponent(Transform2d(pos, RandomGen::randomFloat(0.0f, 45.0f), 1.4f))
-            .addComponent(std::move(sprite))
+            .addComponent(Sprite(texture, RED))
             .addComponent(Velocity(0, 0, 5))
             .addComponent(RenderLayer4())
             .addComponent(RemoveOnDeath())
@@ -164,11 +159,9 @@ namespace Enemies {
 
     inline Entity spawnShieldBubble(const Color color, const float scale) {
         const auto texture = AssetStore::getShieldBubbleTexture();
-        auto sprite = Sprite(texture);
-        sprite.tint = color;
 
         return Universe::getEntityStorage().makeEntity()
-            .addComponent(std::move(sprite))
+            .addComponent(Sprite(texture, color))
             .addComponent(Transform2d(Vec2::zero(), 0.0f, scale))
             .addComponent(RenderLayer2())
             .getEntity();
@@ -182,10 +175,9 @@ namespace Enemies {
             t.push_back(target);
         }
 
-        const auto shield = spawnShieldBubble(SKYBLUE, 1.4f);
+        const auto texture = AssetStore::getPlayerTexture();
 
-        auto sprite = Sprite(AssetStore::getPlayerTexture());
-        sprite.tint = RED;
+        const auto shield = spawnShieldBubble(SKYBLUE, 1.4f);
 
         return Universe::getEntityStorage().makeEntity()
             .addComponent(Targeter(std::move(t)))
@@ -194,10 +186,10 @@ namespace Enemies {
             .addComponent(CollisionRect(16, 16, BitLayers::ENEMY_LAYER, BitLayers::NONE))
             .addComponent(Health(20))
             .addComponent(HealthBar())
-            .addComponent(std::move(sprite))
+            .addComponent(Sprite(texture, RED))
             .addComponent(RenderLayer1())
             .addComponent(Attached(shield))
-            .addComponent(DamageReceiverVolume(BitLayers::ENEMY_LAYER, sprite.texture->getDimensions()))
+            .addComponent(DamageReceiverVolume(BitLayers::ENEMY_LAYER, texture->getDimensions()))
             .addComponent(RemoveOnDeath([shield](const Entity e) {
                 ECS::queryComponentsFor<Targeter>(e, [](const Entity, const Targeter& ta) {
                     auto& es = Universe::getEntityStorage();
