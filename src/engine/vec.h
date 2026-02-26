@@ -67,6 +67,10 @@ struct Vec2 {
         return {0.5f, 0.5f};
     }
 
+    [[nodiscard]] static constexpr Vec2 nan() {
+        return {NAN, NAN};
+    }
+
     static constexpr Vec2 fromInts(const std::uint32_t x, const std::uint32_t y) {
         return { static_cast<float>(x), static_cast<float>(y) };
     }
@@ -92,6 +96,10 @@ struct Vec2 {
     constexpr Vec2(const float x, const float y) {
         this->x = x;
         this->y = y;
+    }
+
+    [[nodiscard]] constexpr bool isNan() const {
+        return std::isnan(x) || std::isnan(y);
     }
 
     [[nodiscard]] constexpr int xInt() const {

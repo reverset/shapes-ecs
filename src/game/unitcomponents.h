@@ -1,6 +1,8 @@
 #ifndef GAME_UNITCOMPONENTS_H
 #define GAME_UNITCOMPONENTS_H
 
+#include <utility>
+
 #include "assetstore.h"
 #include "BitLayers.h"
 #include "particles.h"
@@ -11,6 +13,15 @@
 #include "../engine/standardcomponents.h"
 #include "../engine/logging.h"
 #include "../engine/util.h"
+
+struct PopupText : Component<PopupText> {
+    COMPONENT_STORAGE(PopupText);
+
+    TextFont* font;
+    std::string text;
+
+    explicit PopupText(TextFont* font, std::string text) : font(font), text(std::move(text)) {}
+};
 
 struct Weapon {
     Timestamp lastFiredTimestamp = Timestamp::longAgo();
@@ -55,14 +66,30 @@ struct Health : Component<Health> {
         this->health = maxHealth;
     }
 
-    void heal(const std::uint32_t healing) {
+    void heal(const std::uint32_t healing, const Vec2 where = Vec2::nan()) {
         health = GameUtil::clamp(health + static_cast<std::int32_t>(healing), 0, maxHealth);
         lastHeal = Timestamp::now();
     }
 
-    void damage(const std::uint32_t dmg) { // todo damage struct
+    void damage(const std::uint32_t dmg, const Vec2 where = Vec2::nan()) { // todo damage struct
         health = GameUtil::clamp(health - static_cast<std::int32_t>(dmg), 0, maxHealth);
         lastDamage = Timestamp::now();
+
+        if (!where.isNan()) { // make function for this
+            Universe::defer([dmg, where] {
+                const std::string text = std::format("{}!", dmg); // TODO use std::format for logger!
+
+                constexpr auto lifetime = Duration::ofSeconds(2.0);
+                constexpr auto fadeoutOffset = Duration::ofSeconds(1.0);
+                constexpr auto fadeout = Duration::ofSeconds(1.0);
+
+                Universe::getEntityStorage().makeEntity()
+                    .addComponent(PopupText(TextFont::getDefaultFont(), text))
+                    .addComponent(Transient(lifetime))
+                    .addComponent(FadeOverTime(fadeout, fadeoutOffset))
+                    .addComponent(Transform2d(where));
+            });
+        }
     }
 
     [[nodiscard]] bool isDead() const {
@@ -180,6 +207,7 @@ namespace Spawning {
             .addComponent(std::move(sprite))
             .addComponent(AutoShaderGameTimeUpdate())
             .addComponent(RenderLayer4())
+            .addComponent(Transient(Duration::ofSeconds(10.0)))
             .addComponent(Transform2d(pos, 0.0f, 1.0f))
             .getEntity();
     }
@@ -298,7 +326,7 @@ namespace UnitComponents {
 
             if (CheckCollisionRecs(rect1, rect2)) {
                 damageVolume.lastHit = Timestamp::now();
-                health.damage(damageVolume.damage);
+                health.damage(damageVolume.damage, trans.position);
 
                 OnDamageDealtByVolume evt = {
                     .attacker = e1,
@@ -356,6 +384,12 @@ namespace UnitComponents {
         });
     }
 
+    inline void drawPopupText(const Entity, const PopupText& text, const Transform2d& trans) {
+        // perhaps TextFont should store font size and spacing?
+        // TODO use fade out time!
+        text.font->render(text.text.c_str(), trans.position, 12, 4, WHITE);
+    }
+
     inline void registerAll() {
         Universe::onUpdate
             .registerSystem<DamageVolume, Transform2d>(checkForDamageViaVolumes)
@@ -364,6 +398,7 @@ namespace UnitComponents {
 
         Universe::onLateRender2d
             // .registerCallable(debugVolumes)
+            .registerSystem<PopupText, Transform2d>(drawPopupText)
             .registerSystem<HealthBar, Health, Transform2d>(renderHealthBars);
 
         Universe::onFinalFrameUpdate

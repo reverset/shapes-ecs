@@ -242,11 +242,17 @@ class TextFont : public Resource {
     std::optional<Font> font;
 
     [[nodiscard]] static Logging::Logger& getLogger() {
-        static Logging::Logger logger = NEW_LOGGER(TextFont);
+        static auto logger = NEW_LOGGER(TextFont);
         return logger;
     }
 
 public:
+    static TextFont* getDefaultFont() {
+        const auto font = new TextFont("<default>");
+        font->font = GetFontDefault();
+        return font;
+    }
+
     explicit TextFont(const std::string &path)
         : Resource(path) {
     }
@@ -256,9 +262,13 @@ public:
     }
 
     void doLoad() override {
-        font = LoadFont(path.c_str());
-        if (!isLoaded()) {
-            getLogger().logWarn("Font not found, using default.");
+        if (!path.contains("<default>")) {
+            font = LoadFont(path.c_str());
+            if (!isLoaded()) {
+                getLogger().logWarn("Font not found, using default.");
+                font = GetFontDefault();
+            }
+        } else {
             font = GetFontDefault();
         }
     }
@@ -272,8 +282,16 @@ public:
         UnloadFont(*font);
     }
 
-    [[nodiscard]] Vec2 measure(const std::string_view text, float fontSize, float spacing) {
+    [[nodiscard]] Vec2 measure(const std::string_view text, const float fontSize, const float spacing) const {
         return MeasureTextEx(*font, text.data(), fontSize, spacing);
+    }
+
+    void render(const char* text, const Vec2 position, const float fontSize, const float spacing, const Color color) {
+        if (!isLoaded()) {
+            // Logging::log("Font not loaded. path=%s", path.c_str());
+            return;
+        }
+        DrawTextEx(*font, text, position, fontSize, spacing, color);
     }
 };
 
