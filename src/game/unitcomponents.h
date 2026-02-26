@@ -3,6 +3,7 @@
 
 #include "assetstore.h"
 #include "BitLayers.h"
+#include "particles.h"
 #include "raylib.h"
 
 #include "../engine/Universe.h"
@@ -47,10 +48,16 @@ struct Health : Component<Health> {
     std::int32_t health;
 
     Timestamp lastDamage = Timestamp::longAgo();
+    Timestamp lastHeal = Timestamp::longAgo();
 
     explicit Health(const std::int32_t maxHealth) {
         this->maxHealth = maxHealth;
         this->health = maxHealth;
+    }
+
+    void heal(const std::uint32_t healing) {
+        health = GameUtil::clamp(health + static_cast<std::int32_t>(healing), 0, maxHealth);
+        lastHeal = Timestamp::now();
     }
 
     void damage(const std::uint32_t dmg) { // todo damage struct
@@ -116,13 +123,30 @@ struct DamageVolume : Component<DamageVolume> {
         ) : dimensions(dimensions), mask(mask), damage(damage), hitInterval(hitInterval) {}
 };
 
-struct DamageReceiverVolume : Component<DamageReceiverVolume> {
-    COMPONENT_STORAGE(DamageReceiverVolume);
+struct IncomingHealthModifyingVolume : Component<IncomingHealthModifyingVolume> {
+    COMPONENT_STORAGE(IncomingHealthModifyingVolume);
 
     Vec2 dimensions;
     BitLayers::Type layer;
 
-    explicit DamageReceiverVolume(const BitLayers::Type layer, const Vec2 dimensions) : dimensions(dimensions), layer(layer) {}
+    explicit IncomingHealthModifyingVolume(const BitLayers::Type layer, const Vec2 dimensions) : dimensions(dimensions), layer(layer) {}
+};
+
+struct HealingVolume : Component<HealingVolume> {
+    COMPONENT_STORAGE(HealingVolume);
+
+    Vec2 dimensions;
+    BitLayers::Type mask;
+    std::uint32_t healing;
+    Duration healInterval;
+    Timestamp lastHeal = Timestamp::longAgo();
+
+    explicit HealingVolume(
+        const BitLayers::Type mask,
+        const std::uint32_t healing,
+        const Vec2 dimensions,
+        const Duration hitInterval
+        ) : dimensions(dimensions), mask(mask), healing(healing), healInterval(hitInterval) {}
 };
 
 struct HealingHeart : Component<HealingHeart> {
@@ -136,8 +160,15 @@ struct OnDamageDealtByVolume : Event<OnDamageDealtByVolume> {
     Entity victim;
 };
 
+struct OnHealingDealtByVolume : Event<OnHealingDealtByVolume> {
+    EVENT_STORAGE(OnHealingDealtByVolume);
+
+    Entity doctor;
+    Entity patient;
+};
+
 namespace Spawning {
-    inline Entity spawnHealingHeart(const std::uint32_t heal, const Vec2 pos, const Vec2 vel) {
+    inline Entity spawnHealingHeart(const std::uint32_t healing, const Vec2 pos, const Vec2 vel) {
         const auto texture = AssetStore::getHealingHeart();
         
         auto sprite = Sprite(texture)
@@ -145,6 +176,7 @@ namespace Spawning {
 
         return Universe::getEntityStorage().makeEntity()
             .addComponent(HealingHeart())
+            .addComponent(HealingVolume(BitLayers::PLAYER_LAYER, healing, {16, 16}, Duration::ofSeconds(1.0)))
             .addComponent(std::move(sprite))
             .addComponent(AutoShaderGameTimeUpdate())
             .addComponent(RenderLayer4())
@@ -215,7 +247,7 @@ namespace UnitComponents {
         const float healthWidth = normalizedHealth * bar.width;
         const float healthX = trans.position.x - (healthWidth * 0.5f) - (bar.width - healthWidth) * 0.5f;
 
-        Rectangle healthBar = {
+        const Rectangle healthBar = {
             healthX, y,
             healthWidth, bar.height,
         };
@@ -254,7 +286,7 @@ namespace UnitComponents {
     inline void checkForDamageViaVolumes(const Entity e1, DamageVolume& damageVolume, const Transform2d& trans) {
         if (!damageVolume.lastHit.hasElapsed(damageVolume.hitInterval)) return;
 
-        ECS::query<DamageReceiverVolume, Transform2d, Health>([&](const Entity e2, const DamageReceiverVolume& damageReceiver, const Transform2d& trans2, Health& health) {
+        ECS::query<IncomingHealthModifyingVolume, Transform2d, Health>([&](const Entity e2, const IncomingHealthModifyingVolume& damageReceiver, const Transform2d& trans2, Health& health) {
             if (!BitLayers::checkMask(damageVolume.mask, damageReceiver.layer)) return;
 
             const auto rect1 = GameUtil::centeredRect(
@@ -278,8 +310,36 @@ namespace UnitComponents {
         });
     }
 
+    // duplicate code FIXME
+    inline void checkForHealingViaVolumes(const Entity e1, HealingVolume& healingVolume, const Transform2d& trans) {
+        if (!healingVolume.lastHeal.hasElapsed(healingVolume.healInterval)) return;
+
+        ECS::query<IncomingHealthModifyingVolume, Transform2d, Health>([&](const Entity e2, const IncomingHealthModifyingVolume& patient, const Transform2d& trans2, Health& health) {
+            if (!BitLayers::checkMask(healingVolume.mask, patient.layer)) return;
+
+            const auto rect1 = GameUtil::centeredRect(
+                trans.position.x, trans.position.y,
+                healingVolume.dimensions.x, healingVolume.dimensions.y);
+            const auto rect2 = GameUtil::centeredRect(
+                trans2.position.x, trans2.position.y,
+                patient.dimensions.x, patient.dimensions.y);
+
+            if (CheckCollisionRecs(rect1, rect2)) {
+                healingVolume.lastHeal = Timestamp::now();
+                health.heal(healingVolume.healing);
+
+                OnHealingDealtByVolume evt = {
+                    .doctor = e1,
+                    .patient = e2,
+                };
+
+                evt.send();
+            }
+        });
+    }
+
     inline void debugVolumes() {
-        ECS::query<DamageReceiverVolume, Transform2d>([](const Entity, const DamageReceiverVolume& damageReceiver, const Transform2d& trans) {
+        ECS::query<IncomingHealthModifyingVolume, Transform2d>([](const Entity, const IncomingHealthModifyingVolume& damageReceiver, const Transform2d& trans) {
             const auto rect1 = GameUtil::centeredRect(
                trans.position.x, trans.position.y,
                damageReceiver.dimensions.x, damageReceiver.dimensions.y);
@@ -299,6 +359,7 @@ namespace UnitComponents {
     inline void registerAll() {
         Universe::onUpdate
             .registerSystem<DamageVolume, Transform2d>(checkForDamageViaVolumes)
+            .registerSystem<HealingVolume, Transform2d>(checkForHealingViaVolumes)
             .registerSystem<Health>(deathEventEmitter);
 
         Universe::onLateRender2d
@@ -307,6 +368,16 @@ namespace UnitComponents {
 
         Universe::onFinalFrameUpdate
             .registerSystem<RemoveOnDeath, DeathMarker>(removeDead);
+
+        OnHealingDealtByVolume::listen([](const OnHealingDealtByVolume& volume) {
+            ECS::queryComponentsFor<HealingHeart, Transform2d>(volume.doctor, [](const Entity e, const HealingHeart&, const Transform2d& trans) {
+                Particles::sparkle(trans.position, 14, PINK);
+
+                Universe::defer([e] {
+                    Universe::getEntityStorage().destroyEntity(e);
+                });
+            });
+        });
     }
 }
 

@@ -168,7 +168,8 @@ void debugButtons(const Entity, const Player&, const Transform2d& trans) {
         Enemies::spawnTargeter(desiredPos, 2);
     } else if (IsKeyPressed(KEY_COMMA)) {
         Logging::log("spawning heart");
-        Spawning::spawnHealingHeart(10, trans.position, Vec2::zero());
+        const auto desiredPos = trans.position + Vec2::randomDirection(30);
+        Spawning::spawnHealingHeart(10, desiredPos, Vec2::zero());
     }
 }
 #endif
@@ -227,7 +228,7 @@ int main() {
             // .addComponent(TilemapRenderTracker())
             // .addComponent(TilemapCollider(16, 16))
             .addComponent(RenderLayer3())
-            .addComponent(DamageReceiverVolume(BitLayers::PLAYER_LAYER, {16, 16}))
+            .addComponent(IncomingHealthModifyingVolume(BitLayers::PLAYER_LAYER, {16, 16}))
             .addComponent(CollisionRect(16, 16, BitLayers::PLAYER_LAYER, BitLayers::NONE))
             .addComponent(Health(200))
             .addComponent(PlayerHealthBar());

@@ -77,7 +77,7 @@ namespace Enemies {
             .addComponent(HealthBar())
             .addComponent(Velocity())
             .addComponent(RenderLayer1())
-            .addComponent(DamageReceiverVolume(BitLayers::ENEMY_LAYER, sprite->getDimensions()))
+            .addComponent(IncomingHealthModifyingVolume(BitLayers::ENEMY_LAYER, sprite->getDimensions()))
             .addComponent(RemoveOnDeath())
             .getEntity();
     }
@@ -189,7 +189,7 @@ namespace Enemies {
             .addComponent(Sprite(texture, RED))
             .addComponent(RenderLayer1())
             .addComponent(Attached(shield))
-            .addComponent(DamageReceiverVolume(BitLayers::ENEMY_LAYER, texture->getDimensions()))
+            .addComponent(IncomingHealthModifyingVolume(BitLayers::ENEMY_LAYER, texture->getDimensions()))
             .addComponent(RemoveOnDeath([shield](const Entity e) {
                 ECS::queryComponentsFor<Targeter>(e, [](const Entity, const Targeter& ta) {
                     auto& es = Universe::getEntityStorage();

@@ -116,7 +116,7 @@ struct Velocity : Component<Velocity> {
     Vec2 velocity = {0, 0};
     float angularVelocity = 0.0f;
 
-    explicit Velocity() {}
+    explicit Velocity() = default;
 
     explicit Velocity(const Vec2 linearVel) {
         this->velocity = linearVel;
