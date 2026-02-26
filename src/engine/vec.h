@@ -63,6 +63,10 @@ struct Vec2 {
         return {0, 0};
     }
 
+    [[nodiscard]] static constexpr Vec2 halves() {
+        return {0.5f, 0.5f};
+    }
+
     static constexpr Vec2 fromInts(const std::uint32_t x, const std::uint32_t y) {
         return { static_cast<float>(x), static_cast<float>(y) };
     }
@@ -211,6 +215,13 @@ struct Vec2 {
         if (currentMag == 0) return {0, 0};
 
         return *this * (mag / currentMag);
+    }
+
+    [[nodiscard]] constexpr Vec2 round(const Vec2 toPlaceXY) const {
+        return {
+            std::round(x * toPlaceXY.x) / toPlaceXY.x,
+            std::round(y * toPlaceXY.y) / toPlaceXY.y,
+        };
     }
 
     constexpr explicit Vec2(const Vec2ui other) {

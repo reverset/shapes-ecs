@@ -237,7 +237,25 @@ struct ColliderOverlapEvent : Event<ColliderOverlapEvent> {
     CollisionRect* cB;
 };
 
+struct WrappingBackground : Component<WrappingBackground> {
+    COMPONENT_STORAGE(WrappingBackground);
+
+    TextureResource* texture;
+    float scale;
+
+    explicit WrappingBackground(TextureResource* texture, const float scale) : texture(texture), scale(scale) {}
+};
+
+namespace StandardEntityPresets {
+    inline Entity makeBackground(TextureResource* texture, const float scale) {
+        return Universe::getEntityStorage().makeEntity()
+            .addComponent(WrappingBackground(texture, scale))
+            .getEntity();
+    }
+}
+
 namespace StandardComponentSystems {
+
     inline void removeTransient(const Entity e, const Transient& transient) {
         const auto time = Universe::getGameTime();
 
@@ -354,6 +372,28 @@ namespace StandardComponentSystems {
 
 namespace RenderingSystems {
 
+    inline void renderBackground(const Entity, const WrappingBackground& background) {
+        const Vec2 cameraPos = Universe::getCamera()->target;
+        const auto dim = background.texture->getDimensions() * background.scale;
+        // Vec2 initial = GameLoop.getMainCamera()
+        //  .trans.position.minus(
+        //      background.width()*2,
+        //      background.height()*2)
+        //          .roundEq(1f / background.width(),
+        //              1f / background.height());
+
+
+        const auto initial = (cameraPos - dim).round({1.0f / dim.x, 1.0f / dim.y});
+
+        for (float i = 0; i < 4; i++) {
+            for (float j = 0; j < 4; j++) {
+                const Vec2 pos = initial + dim * Vec2{i, j};
+
+                background.texture->render(pos, 0.0f, background.scale, WHITE);
+            }
+        }
+    }
+
     // maybe make a macro
     inline void renderSprites_0(const Entity, const RenderLayer0&, const Sprite& sprite, const Transform2d& trans) {
         sprite.render(trans.position, trans.rotation, trans.scale);
@@ -390,6 +430,9 @@ namespace RenderingSystems {
             ECS::query<RenderLayer4, Sprite, Transform2d>(renderSprites_4);
             ECS::query<RenderLayer5, Sprite, Transform2d>(renderSprites_5);
         };
+
+        Universe::onEarlyRender2d
+            .registerSystem<WrappingBackground>(renderBackground);
 
         Universe::onRender2d
             .registerCallable(renderSprites);

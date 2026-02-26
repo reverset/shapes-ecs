@@ -92,6 +92,10 @@ namespace AssetStore {
             "heart",
             new TextureResource("heart.png"));
 
+        man->registerResource(
+            "background",
+            new TextureResource("background.png"));
+
         loadHealingHeart();
     }
 
@@ -150,6 +154,10 @@ namespace AssetStore {
 
     inline FragmentShader* getHealingHeartShader() {
         return *Universe::getResourceManager()->getResource<FragmentShader>("healing-heart-fs");
+    }
+
+    inline TextureResource* getBackgroundTexture() {
+        return *Universe::getResourceManager()->getResource<TextureResource>("background");
     }
 }
 

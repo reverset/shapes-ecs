@@ -177,7 +177,7 @@ void debugButtons(const Entity, const Player&, const Transform2d& trans) {
 int main() {
     // TODO update gamepad mapping for linux ... MIGHT BE MORE PROBLEMATIC THAN ANTICIPATED
 
-    Universe::init(640, 360, "Game", [] {
+    Universe::init(640, 360, "Pixel Space", [] {
         AssetStore::initialLoadAll();
 
         defineKeybindings();
@@ -237,14 +237,7 @@ int main() {
             Enemies::spawnMeanie({120, 6 + (i*16)});
         }
 
-        class Test : public Component<Test> {
-        public:
-            Tween<double> anim;
-            COMPONENT_STORAGE(Test);
-            
-            explicit Test() 
-                : anim(Tween(Duration::ofSeconds(10.0), Tweeners::lerp(0, 100))) {}
-        };
+        StandardEntityPresets::makeBackground(AssetStore::getBackgroundTexture(), 0.08f);
 
     }, [] {});
     // }, [] {});
