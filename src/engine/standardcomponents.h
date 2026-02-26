@@ -217,6 +217,16 @@ MARKER_COMPONENT(RenderLayer3);
 MARKER_COMPONENT(RenderLayer4);
 MARKER_COMPONENT(RenderLayer5);
 
+struct AutoShaderGameTimeUpdate : Component<AutoShaderGameTimeUpdate> {
+    COMPONENT_STORAGE(AutoShaderGameTimeUpdate);
+
+    int id;
+
+    explicit AutoShaderGameTimeUpdate() {
+        id = -1;
+    }
+};
+
 struct ColliderOverlapEvent : Event<ColliderOverlapEvent> {
     EVENT_STORAGE(ColliderOverlapEvent);
 
@@ -292,6 +302,31 @@ namespace StandardComponentSystems {
         });
     }
 
+    inline void updateTimeForShaders(const Entity e, AutoShaderGameTimeUpdate& shad, const Sprite& sprite) {
+        const auto time = static_cast<float>(Universe::getGameTime());
+        const auto shader = sprite.getShader();
+        if (shader == nullptr) {
+            Logging::log("[AutoShaderGameTimeUpdate] sprite did not have a shader! sprite texture path=%s", sprite.texture->getPath().c_str());
+            Universe::defer([e] {
+                 Universe::getEntityStorage()
+                    .removeComponent<AutoShaderGameTimeUpdate>(e);
+            });
+            return;
+        }
+
+        if (shad.id == -1) shad.id = shader->getFieldId("gameTime");
+        if (shad.id == -1) {
+            Logging::log("Shader missing 'gameTime' field, but had the AutoShaderGameTimeUpdate component added. sprite path=%s", sprite.texture->getPath().c_str());
+            Universe::defer([e] {
+                Universe::getEntityStorage()
+                    .removeComponent<AutoShaderGameTimeUpdate>(e);
+            });
+            return;
+        }
+
+        shader->setFieldValueById(shad.id, time, SHADER_UNIFORM_FLOAT);
+    }
+
     inline void debugDrawMarkers(const Entity, const DebugMarker& marker, const Transform2d& trans) {
         DrawCircle(trans.position.xInt(), trans.position.yInt(), 3.0f, marker.color);
     }
@@ -305,6 +340,9 @@ namespace StandardComponentSystems {
 
         Universe::onLateUpdate
             .registerSystem<Attached, Transform2d>(moveAttached);
+
+        Universe::onEarlyRender2d
+            .registerSystem<AutoShaderGameTimeUpdate, Sprite>(updateTimeForShaders);
     }
 
     inline void enableDebugRendering() {

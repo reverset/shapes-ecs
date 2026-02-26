@@ -146,8 +146,9 @@ namespace Spawning {
         return Universe::getEntityStorage().makeEntity()
             .addComponent(HealingHeart())
             .addComponent(std::move(sprite))
+            .addComponent(AutoShaderGameTimeUpdate())
             .addComponent(RenderLayer4())
-            .addComponent(Transform2d(pos, 0.0f, 3.0f))
+            .addComponent(Transform2d(pos, 0.0f, 1.0f))
             .getEntity();
     }
 

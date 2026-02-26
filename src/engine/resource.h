@@ -41,6 +41,10 @@ public:
         doUnload();
     }
 
+    [[nodiscard]] std::string getPath() const {
+        return path;
+    }
+
     virtual ~Resource() = default;
 
 private:
@@ -161,35 +165,54 @@ public:
         UnloadShader(*shader);
     }
 
-    void setField(const std::string_view fieldName, const float value) const {
+    [[nodiscard]] int getFieldId(const std::string& fieldName) const {
+        if (!shader.has_value()) {
+            getLogger().logWarn("Shader not found, but field was set");
+            return -1;
+        }
+
+        return GetShaderLocation(*shader, fieldName.c_str());
+    }
+
+    template <typename T>
+    void setFieldValueById(const int id, const T& value, const ShaderUniformDataType uniformType) {
+        if (!shader.has_value()) {
+            getLogger().logWarn("Shader not found, but field was set by id");
+            return;
+        }
+
+        SetShaderValue(*shader, id, &value, uniformType);
+    }
+
+    void setField(const std::string& fieldName, const float value) const {
         if (!shader.has_value()) {
             getLogger().logWarn("Shader not found, but field was set");
             return;
         }
 
-        const int index = GetShaderLocation(*shader, fieldName.data());
+        const int index = GetShaderLocation(*shader, fieldName.c_str());
 
         SetShaderValue(*shader, index, &value, SHADER_UNIFORM_FLOAT);
     }
 
-    void setField(const std::string_view fieldName, const Color value) const {
+    void setField(const std::string& fieldName, const Color value) const {
         if (!shader.has_value()) {
             getLogger().logWarn("Shader not found, but field was set");
             return;
         }
 
-        const int index = GetShaderLocation(*shader, fieldName.data());
+        const int index = GetShaderLocation(*shader, fieldName.c_str());
 
         SetShaderValue(*shader, index, &value, SHADER_UNIFORM_VEC4);
     }
 
-    void setField(const std::string_view fieldName, const Vec2 value) const {
+    void setField(const std::string& fieldName, const Vec2 value) const {
         if (!shader.has_value()) {
             getLogger().logWarn("Shader not found, but field was set");
             return;
         }
 
-        const int index = GetShaderLocation(*shader, fieldName.data());
+        const int index = GetShaderLocation(*shader, fieldName.c_str());
 
         const Vector2 r = value;
 

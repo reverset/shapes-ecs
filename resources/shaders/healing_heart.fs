@@ -1,7 +1,10 @@
 #version 330
 
+uniform float gameTime;
+
 in vec2 fragTexCoord;
 in vec4 fragColor;
+
 out vec4 finalColor;
 
 uniform sampler2D texture0;
@@ -22,10 +25,10 @@ vec2 sineCircle(float radius, float waves, float amplitude, float t) {
 }
 
 bool isPointWithinCircle(vec2 point) {
-    const float THRESHOLD = 0.02;
+    const float THRESHOLD = 0.01;
 
     for (float i = 0; i < TWO_PI; i += 0.04) {
-        vec2 test = sineCircle(0.2, 10, 0.02, i);
+        vec2 test = sineCircle(0.35 + 0.04 * cos(5 * gameTime), 10, 0.02 + 0.01*cos(10 * gameTime), i);
 
         if (length(point - test) <= THRESHOLD) {
             return true;
@@ -35,27 +38,20 @@ bool isPointWithinCircle(vec2 point) {
     return false;
 }
 
-void main()
-{
+void main() {
     vec4 texelColor = texture(texture0, fragTexCoord);
 
-    const vec2 center = vec2(0.51, 0.49);
-
-    vec2 d = fragTexCoord - center;
+    const vec2 center = vec2(0.51, 0.47);
     // not perfect center since the sprite is slightly offset
     // the sprite is 16x16, and the render texture is 32x32.
 
+    vec2 d = fragTexCoord - center;
+
     float distance = length(d);
 
-    float innerRadius = 0.2;
-
-    float outerRadius = innerRadius + 0.01;
-
     finalColor = texelColor * colDiffuse * fragColor;
-    // if (distance >= innerRadius && distance <= outerRadius) {
-    //     finalColor = vec4(PINK, 1.0);
-    // }
-    if (isPointWithinCircle(fragTexCoord - vec2(0.51, 0.49))) {
-        finalColor = vec4(PINK, 1.0);
+
+    if (isPointWithinCircle(fragTexCoord - center)) {
+        finalColor = vec4(PINK, abs(cos(2 * gameTime)) + 0.5);
     }
 }

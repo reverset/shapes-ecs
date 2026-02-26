@@ -6,11 +6,11 @@
 
 namespace AssetStore {
 
-    TextureResource* getHealingHeartRawTexture();
+    TextureResource* getHeartTexture();
     inline void loadHealingHeart() {
         const auto man = Universe::getResourceManager();
 
-        const auto heart = getHealingHeartRawTexture();
+        const auto heart = getHeartTexture();
 
         man->registerResource(
             "healing-heart",
@@ -20,7 +20,7 @@ namespace AssetStore {
                 BeginTextureMode(rtex);
                 ClearBackground(BLANK);
                 
-                heart->render({16, 16}, 0.0f, 1.0f, PINK);
+                heart->render({16, 16}, PI, 1.0f, PINK);
 
                 EndTextureMode();
 
@@ -88,6 +88,10 @@ namespace AssetStore {
             "healing-heart-fs",
             new FragmentShader("shaders/healing_heart.fs"));
 
+        man->registerResource(
+            "heart",
+            new TextureResource("heart.png"));
+
         loadHealingHeart();
     }
 
@@ -128,8 +132,8 @@ namespace AssetStore {
         return *Universe::getResourceManager()->getResource<TextureResource>("pulse-effect");
     }
 
-    inline TextureResource* getHealingHeartRawTexture() { // TODO
-        return *Universe::getResourceManager()->getResource<TextureResource>("spark");
+    inline TextureResource* getHeartTexture() {
+        return *Universe::getResourceManager()->getResource<TextureResource>("heart");
     }
 
     inline TextureResource* getHealingHeart() {
