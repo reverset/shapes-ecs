@@ -14,14 +14,20 @@
 #include "../engine/logging.h"
 #include "../engine/util.h"
 
+enum PopupTextStyle {
+    PULSE_STYLE,
+};
+
 struct PopupText : Component<PopupText> {
     COMPONENT_STORAGE(PopupText);
 
     FontConfig font;
     std::string text;
+    PopupTextStyle style;
+    Color tint;
     Timestamp spawnTime = Timestamp::now();
 
-    explicit PopupText(const FontConfig& font, std::string text) : font(font), text(std::move(text)) {}
+    explicit PopupText(const FontConfig& font, std::string text, const PopupTextStyle style, const Color tint) : font(font), text(std::move(text)), style(style), tint(tint) {}
 };
 
 struct Weapon {
@@ -53,6 +59,10 @@ struct Bullet : Component<Bullet> {
     }
 };
 
+namespace InternalSpawning {
+    Entity spawnPopupText(const std::string& text, const PopupTextStyle style, const Vec2 position, const Color tint);
+}
+
 struct Health : Component<Health> {
     COMPONENT_STORAGE(Health);
 
@@ -78,19 +88,8 @@ struct Health : Component<Health> {
 
         if (!where.isNan()) { // make function for this
             Universe::defer([dmg, where] {
-                const std::string text = std::format("{}!", dmg); // TODO use std::format for logger!
-
-                constexpr auto lifetime = Duration::ofSeconds(2.0);
-                constexpr auto fadeoutOffset = Duration::ofSeconds(1.0);
-                constexpr auto fadeout = Duration::ofSeconds(1.0);
-
-                const auto font = FontConfig(AssetStore::getJetbrainsMonoRegular(), 12, 1, true);
-
-                Universe::getEntityStorage().makeEntity()
-                    .addComponent(PopupText(font, text))
-                    .addComponent(Transient(lifetime))
-                    .addComponent(FadeOverTime(fadeout, fadeoutOffset))
-                    .addComponent(Transform2d(where));
+                const std::string text = std::format("{}", dmg);
+                InternalSpawning::spawnPopupText(text, PULSE_STYLE, where, GOLD);
             });
         }
     }
@@ -198,6 +197,25 @@ struct OnHealingDealtByVolume : Event<OnHealingDealtByVolume> {
 };
 
 namespace Spawning {
+    inline Entity spawnPopupText(const std::string& text, const PopupTextStyle style, const Vec2 position, const Color tint) {
+        // pulse style, todo more styles
+        constexpr auto lifetime = Duration::ofSeconds(2.0);
+        constexpr auto fadeoutOffset = Duration::ofSeconds(1.0);
+        constexpr auto fadeout = Duration::ofSeconds(1.0);
+
+        const auto font = FontConfig(AssetStore::getJetbrainsMonoRegular(), 12, 1, true);
+        
+        const auto bangs = RandomGen::randomSizet(0, 3);
+        const std::string desiredText = std::format("{}{}", text, GameUtil::repeatStr("!", bangs));
+
+        return Universe::getEntityStorage().makeEntity()
+            .addComponent(PopupText(font, desiredText, style, tint))
+            .addComponent(Transient(lifetime))
+            .addComponent(FadeOverTime(fadeout, fadeoutOffset))
+            .addComponent(Transform2d(position))
+            .getEntity();
+    }
+
     inline Entity spawnHealingHeart(const std::uint32_t healing, const Vec2 pos, const Vec2 vel) {
         const auto texture = AssetStore::getHealingHeart();
         
@@ -395,7 +413,7 @@ namespace UnitComponents {
 
         const auto fontSize = text.font.fontSize * (0.5 / (norm+0.1));
         // text.font->render(text.text.c_str(), trans.position, static_cast<float>(fontSize), 1, WHITE, true);
-        text.font.render(text.text.c_str(), trans.position, WHITE, static_cast<float>(fontSize));
+        text.font.render(text.text.c_str(), trans.position, text.tint, static_cast<float>(fontSize));
     }
 
     inline void registerAll() {
@@ -428,6 +446,10 @@ namespace UnitComponents {
             });
         });
     }
+}
+
+Entity InternalSpawning::spawnPopupText(const std::string& text, const PopupTextStyle style, const Vec2 position, const Color tint) {
+    return Spawning::spawnPopupText(text, style, position, tint);
 }
 
 #endif //GAME_UNITCOMPONENTS_H

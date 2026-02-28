@@ -91,6 +91,16 @@ namespace GameUtil {
             static_cast<unsigned char>(lerp(static_cast<float>(a.a), static_cast<float>(b.a), delta)),
         };
     }
+
+    [[nodiscard]] constexpr std::string repeatStr(const std::string_view desired, const std::size_t amount) {
+        std::string result;
+        result.reserve(desired.size() * amount);
+
+        for (std::size_t i = 0; i < amount; i++) {
+            result.append(desired);
+        }
+        return result;
+    }
 }
 
 #endif //GAME_UTIL_H

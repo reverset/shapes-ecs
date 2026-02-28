@@ -180,7 +180,7 @@ void debugButtons(const Entity, const Player&, const Transform2d& trans) {
 
 int main() {
     // TODO update gamepad mapping for linux ... MIGHT BE MORE PROBLEMATIC THAN ANTICIPATED
-
+    
     Universe::init(640, 360, "Pixel Space", [] {
         AssetStore::initialLoadAll();
 

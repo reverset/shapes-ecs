@@ -13,17 +13,22 @@ namespace RandomGen {
         engine = std::minstd_rand(seed);
     }
 
-    int random(const int min, const int max) {
+    [[nodiscard]] int random(const int min, const int max) {
         std::uniform_int_distribution dis(min, max);
         return dis(engine.value());
     }
 
-    float randomFloat(const float min, const float max) {
+    [[nodiscard]] std::size_t randomSizet(const std::size_t min, const std::size_t max) {
+        std::uniform_int_distribution dis(min, max);
+        return dis(engine.value());
+    }
+
+    [[nodiscard]] float randomFloat(const float min, const float max) {
         std::uniform_real_distribution dis(min, max);
         return dis(engine.value());
     }
 
-    double randomNormalized() {
+    [[nodiscard]] double randomNormalized() {
         std::uniform_real_distribution dis(0.0, 1.0);
         return dis(engine.value());
     }
