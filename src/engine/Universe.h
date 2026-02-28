@@ -129,7 +129,7 @@ struct Timestamp {
         return Universe::getGameTime() > moment + dur.toSeconds();
     }
 
-    [[nodiscard]] double normalizedElapsed(Duration max) const {
+    [[nodiscard]] double normalizedElapsed(const Duration max) const {
         return GameUtil::clamp(
             (Universe::getGameTime() - moment) / max.toSeconds(), 
             0.0,

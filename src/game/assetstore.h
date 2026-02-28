@@ -31,6 +31,11 @@ namespace AssetStore {
 
     inline void initialLoadAll() {
         const auto man = Universe::getResourceManager();
+
+        man->registerResource(
+            "jetbrains-mono-regular",
+            new TextFont("fonts/jetbrainsmono/fonts/ttf/JetBrainsMono-Regular.ttf"));
+
         man->registerResource(
             "genericWall",
             new TextureResource("genericWall.png"));
@@ -158,6 +163,10 @@ namespace AssetStore {
 
     inline TextureResource* getBackgroundTexture() {
         return *Universe::getResourceManager()->getResource<TextureResource>("background");
+    }
+
+    inline TextFont* getJetbrainsMonoRegular() {
+        return *Universe::getResourceManager()->getResource<TextFont>("jetbrains-mono-regular");
     }
 }
 

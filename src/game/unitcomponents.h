@@ -17,10 +17,11 @@
 struct PopupText : Component<PopupText> {
     COMPONENT_STORAGE(PopupText);
 
-    TextFont* font;
+    FontConfig font;
     std::string text;
+    Timestamp spawnTime = Timestamp::now();
 
-    explicit PopupText(TextFont* font, std::string text) : font(font), text(std::move(text)) {}
+    explicit PopupText(const FontConfig& font, std::string text) : font(font), text(std::move(text)) {}
 };
 
 struct Weapon {
@@ -83,8 +84,10 @@ struct Health : Component<Health> {
                 constexpr auto fadeoutOffset = Duration::ofSeconds(1.0);
                 constexpr auto fadeout = Duration::ofSeconds(1.0);
 
+                const auto font = FontConfig(AssetStore::getJetbrainsMonoRegular(), 12, 1, true);
+
                 Universe::getEntityStorage().makeEntity()
-                    .addComponent(PopupText(TextFont::getDefaultFont(), text))
+                    .addComponent(PopupText(font, text))
                     .addComponent(Transient(lifetime))
                     .addComponent(FadeOverTime(fadeout, fadeoutOffset))
                     .addComponent(Transform2d(where));
@@ -384,10 +387,15 @@ namespace UnitComponents {
         });
     }
 
-    inline void drawPopupText(const Entity, const PopupText& text, const Transform2d& trans) {
+    inline void drawPopupText(const Entity, PopupText& text, const Transform2d& trans) {
         // perhaps TextFont should store font size and spacing?
         // TODO use fade out time!
-        text.font->render(text.text.c_str(), trans.position, 12, 4, WHITE);
+        constexpr auto dur = Duration::ofSeconds(1.0);
+        const auto norm = text.spawnTime.normalizedElapsed(dur);
+
+        const auto fontSize = text.font.fontSize * (0.5 / (norm+0.1));
+        // text.font->render(text.text.c_str(), trans.position, static_cast<float>(fontSize), 1, WHITE, true);
+        text.font.render(text.text.c_str(), trans.position, WHITE, static_cast<float>(fontSize));
     }
 
     inline void registerAll() {

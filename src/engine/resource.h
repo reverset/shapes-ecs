@@ -282,16 +282,38 @@ public:
         UnloadFont(*font);
     }
 
-    [[nodiscard]] Vec2 measure(const std::string_view text, const float fontSize, const float spacing) const {
-        return MeasureTextEx(*font, text.data(), fontSize, spacing);
+    [[nodiscard]] Vec2 measure(const char* text, const float fontSize, const float spacing) const {
+        return MeasureTextEx(*font, text, fontSize, spacing);
     }
 
-    void render(const char* text, const Vec2 position, const float fontSize, const float spacing, const Color color) {
+    void render(const char* text, const Vec2 position, const float fontSize, const float spacing, const Color color, bool center = false) {
         if (!isLoaded()) {
             // Logging::log("Font not loaded. path=%s", path.c_str());
             return;
         }
-        DrawTextEx(*font, text, position, fontSize, spacing, color);
+
+        if (!center) DrawTextEx(*font, text, position, fontSize, spacing, color);
+        else {
+            const auto offset = measure(text, fontSize, spacing);
+            DrawTextEx(*font, text, position - (offset * 0.5), fontSize, spacing, color);
+        }
+    }
+};
+
+struct FontConfig {
+    TextFont* font;
+    float fontSize;
+    float spacing;
+    bool center;
+
+    explicit FontConfig(TextFont* font, const float fontSize, const float spacing, const bool center) : font(font), fontSize(fontSize), spacing(spacing), center(center) {}
+
+    void render(const char* text, const Vec2 position, const Color color) const {
+        font->render(text, position, fontSize, spacing, color, center);
+    }
+
+    void render(const char* text, const Vec2 position, const Color color, const float fontSizeOverride) const {
+        font->render(text, position, fontSizeOverride, spacing, color, center);
     }
 };
 
