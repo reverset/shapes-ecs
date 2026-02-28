@@ -404,10 +404,16 @@ namespace UnitComponents {
             .registerSystem<HealingVolume, Transform2d>(checkForHealingViaVolumes)
             .registerSystem<Health>(deathEventEmitter);
 
+        const auto drawStuff = [] {
+            ECS::query<HealthBar, Health, Transform2d>(renderHealthBars);
+            ECS::query<PopupText, Transform2d>(drawPopupText);
+        };
+
         Universe::onLateRender2d
+            .registerCallable(drawStuff);
             // .registerCallable(debugVolumes)
-            .registerSystem<PopupText, Transform2d>(drawPopupText)
-            .registerSystem<HealthBar, Health, Transform2d>(renderHealthBars);
+            // .registerSystem<PopupText, Transform2d>(drawPopupText)
+            // .registerSystem<HealthBar, Health, Transform2d>(renderHealthBars);
 
         Universe::onFinalFrameUpdate
             .registerSystem<RemoveOnDeath, DeathMarker>(removeDead);
