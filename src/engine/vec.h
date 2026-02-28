@@ -176,13 +176,13 @@ struct Vec2 {
         return dot(*this);
     }
 
-    [[nodiscard]] constexpr bool isApprox(const Vec2 other) const {
-        return GameUtil::isApprox(x, other.x)
-            && GameUtil::isApprox(y, other.y);
+    [[nodiscard]] constexpr bool isApprox(const Vec2 other, const float epsilon = 1e-6) const {
+        return GameUtil::isApprox(x, other.x, epsilon)
+            && GameUtil::isApprox(y, other.y, epsilon);
     }
 
-    [[nodiscard]] constexpr bool isApproxZero() const {
-        return isApprox(zero());
+    [[nodiscard]] constexpr bool isApproxZero(const float epsilon = 1e-6) const {
+        return isApprox(zero(), epsilon);
     }
 
     [[nodiscard]] constexpr Vec2 normalizeOrZero() const {

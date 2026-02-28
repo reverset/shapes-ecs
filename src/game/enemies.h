@@ -16,7 +16,6 @@ struct Meanie : Component<Meanie> {
     COMPONENT_STORAGE(Meanie);
 
     Timestamp lastShootTime = Timestamp::longAgo();
-
     Timestamp lastMoveTime = Timestamp::longAgo();
     Duration moveInterval = Duration::zero();
 };
@@ -26,6 +25,9 @@ struct Target: Component<Target> {
 
     Vec2 target{0, 0};
     Timestamp lastTargetUpdate = Timestamp::longAgo();
+    Timestamp lastShootTime = Timestamp::now();
+
+    Duration shootInterval = Duration::ofSeconds(0.5);
     Duration moveInterval = Duration::zero();
 };
 
@@ -77,7 +79,7 @@ namespace Enemies {
             .addComponent(HealthBar())
             .addComponent(Velocity())
             .addComponent(RenderLayer1())
-            .addComponent(IncomingHealthModifyingVolume(BitLayers::ENEMY_LAYER, sprite->getDimensions()))
+            .addComponent(HealthInteractionVolume(BitLayers::ENEMY_LAYER, sprite->getDimensions()))
             .addComponent(RemoveOnDeath())
             .getEntity();
     }
@@ -128,20 +130,26 @@ namespace Enemies {
             .getEntity();
     }
 
-    inline void targetUpdate(const Entity, Target& circle, const Transform2d& trans) {
+    inline void targetUpdate(const Entity, Target& circle, const Transform2d& trans, const Velocity& vel) {
         constexpr std::uint32_t damage = 10;
 
         if (circle.lastTargetUpdate.hasElapsed(circle.moveInterval)) {
 
-            circle.lastTargetUpdate = Timestamp::now();
-            circle.moveInterval = Duration::ofSeconds(RandomGen::randomFloat(0.2f, 2.0f));
 
             const auto player = ECS::findOneOf<Player, Transform2d>();
             if (!player.has_value()) return;
             const auto playerTrans = std::get<1>(*player);
 
-            circle.target = playerTrans->position;
+            circle.target = playerTrans->position + Vec2::randomDirection(10);
 
+            if (trans.position.isApprox(playerTrans->position, 10)) {
+                circle.lastTargetUpdate = Timestamp::now();
+                circle.moveInterval = Duration::ofSeconds(RandomGen::randomFloat(0.2f, 2.0f));
+            }
+        }
+
+        if (circle.lastShootTime.hasElapsed(circle.shootInterval) && vel.velocity.isApproxZero(10)) {
+            circle.lastShootTime = Timestamp::now();
             Universe::defer([=] {
                 spawnPulse(trans.position, damage, RED);
             });
@@ -150,14 +158,14 @@ namespace Enemies {
     }
 
     inline void updateTargetVel(const Entity, const Target& circle, const Transform2d& trans, Velocity& vel) {
-        constexpr float IDEAL_VEL = 200;
+        constexpr float IDEAL_VEL = 100;
         constexpr float ACCEL = 10;
 
         const auto directionAndMagnitude = (circle.target - trans.position).resize(IDEAL_VEL);
         vel.velocity = vel.velocity.lerp(directionAndMagnitude, ACCEL * Universe::getScaledDeltaTime());
     }
 
-    inline Entity spawnShieldBubble(const Color color, const float scale) {
+    inline Entity spawnShieldBubbleSprite(const Color color, const float scale) {
         const auto texture = AssetStore::getShieldBubbleTexture();
 
         return Universe::getEntityStorage().makeEntity()
@@ -177,19 +185,19 @@ namespace Enemies {
 
         const auto texture = AssetStore::getPlayerTexture();
 
-        const auto shield = spawnShieldBubble(SKYBLUE, 1.4f);
+        const auto shield = spawnShieldBubbleSprite(SKYBLUE, 1.4f);
 
         return Universe::getEntityStorage().makeEntity()
             .addComponent(Targeter(std::move(t)))
             .addComponent(Transform2d(pos))
             .addComponent(Velocity())
             .addComponent(CollisionRect(16, 16, BitLayers::ENEMY_LAYER, BitLayers::NONE))
-            .addComponent(Health(20))
+            .addComponent(Health(300))
             .addComponent(HealthBar())
             .addComponent(Sprite(texture, RED))
             .addComponent(RenderLayer1())
             .addComponent(Attached(shield))
-            .addComponent(IncomingHealthModifyingVolume(BitLayers::ENEMY_LAYER, texture->getDimensions()))
+            .addComponent(HealthInteractionVolume(BitLayers::ENEMY_LAYER, texture->getDimensions()))
             .addComponent(RemoveOnDeath([shield](const Entity e) {
                 ECS::queryComponentsFor<Targeter>(e, [](const Entity, const Targeter& ta) {
                     auto& es = Universe::getEntityStorage();
@@ -221,7 +229,7 @@ namespace Enemies {
     inline void registerAll() {
         Universe::onIrregularUpdate
             .registerSystem<Meanie, Transform2d, Velocity>(meanieThink)
-            .registerSystem<Target, Transform2d>(targetUpdate);
+            .registerSystem<Target, Transform2d, Velocity>(targetUpdate);
 
         Universe::onUpdate
             .registerSystem<Target, Transform2d, Velocity>(updateTargetVel);

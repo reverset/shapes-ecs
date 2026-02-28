@@ -80,6 +80,13 @@ struct Health : Component<Health> {
     void heal(const std::uint32_t healing, const Vec2 where = Vec2::nan()) {
         health = GameUtil::clamp(health + static_cast<std::int32_t>(healing), 0, maxHealth);
         lastHeal = Timestamp::now();
+
+        if (!where.isNan()) { // make function for this
+            Universe::defer([healing, where] {
+                const std::string text = std::format("+{}", healing);
+                InternalSpawning::spawnPopupText(text, PULSE_STYLE, where, LIME);
+            });
+        }
     }
 
     void damage(const std::uint32_t dmg, const Vec2 where = Vec2::nan()) { // todo damage struct
@@ -88,7 +95,7 @@ struct Health : Component<Health> {
 
         if (!where.isNan()) { // make function for this
             Universe::defer([dmg, where] {
-                const std::string text = std::format("{}", dmg);
+                const std::string text = std::format("{}{}", dmg, GameUtil::repeatStr("!", RandomGen::randomSizet(0, 3)));
                 InternalSpawning::spawnPopupText(text, PULSE_STYLE, where, GOLD);
             });
         }
@@ -152,13 +159,13 @@ struct DamageVolume : Component<DamageVolume> {
         ) : dimensions(dimensions), mask(mask), damage(damage), hitInterval(hitInterval) {}
 };
 
-struct IncomingHealthModifyingVolume : Component<IncomingHealthModifyingVolume> {
-    COMPONENT_STORAGE(IncomingHealthModifyingVolume);
+struct HealthInteractionVolume : Component<HealthInteractionVolume> {
+    COMPONENT_STORAGE(HealthInteractionVolume);
 
     Vec2 dimensions;
     BitLayers::Type layer;
 
-    explicit IncomingHealthModifyingVolume(const BitLayers::Type layer, const Vec2 dimensions) : dimensions(dimensions), layer(layer) {}
+    explicit HealthInteractionVolume(const BitLayers::Type layer, const Vec2 dimensions) : dimensions(dimensions), layer(layer) {}
 };
 
 struct HealingVolume : Component<HealingVolume> {
@@ -205,11 +212,8 @@ namespace Spawning {
 
         const auto font = FontConfig(AssetStore::getJetbrainsMonoRegular(), 12, 1, true);
         
-        const auto bangs = RandomGen::randomSizet(0, 3);
-        const std::string desiredText = std::format("{}{}", text, GameUtil::repeatStr("!", bangs));
-
         return Universe::getEntityStorage().makeEntity()
-            .addComponent(PopupText(font, desiredText, style, tint))
+            .addComponent(PopupText(font, text, style, tint))
             .addComponent(Transient(lifetime))
             .addComponent(FadeOverTime(fadeout, fadeoutOffset))
             .addComponent(Transform2d(position))
@@ -335,7 +339,7 @@ namespace UnitComponents {
     inline void checkForDamageViaVolumes(const Entity e1, DamageVolume& damageVolume, const Transform2d& trans) {
         if (!damageVolume.lastHit.hasElapsed(damageVolume.hitInterval)) return;
 
-        ECS::query<IncomingHealthModifyingVolume, Transform2d, Health>([&](const Entity e2, const IncomingHealthModifyingVolume& damageReceiver, const Transform2d& trans2, Health& health) {
+        ECS::query<HealthInteractionVolume, Transform2d, Health>([&](const Entity e2, const HealthInteractionVolume& damageReceiver, const Transform2d& trans2, Health& health) {
             if (!BitLayers::checkMask(damageVolume.mask, damageReceiver.layer)) return;
 
             const auto rect1 = GameUtil::centeredRect(
@@ -363,7 +367,7 @@ namespace UnitComponents {
     inline void checkForHealingViaVolumes(const Entity e1, HealingVolume& healingVolume, const Transform2d& trans) {
         if (!healingVolume.lastHeal.hasElapsed(healingVolume.healInterval)) return;
 
-        ECS::query<IncomingHealthModifyingVolume, Transform2d, Health>([&](const Entity e2, const IncomingHealthModifyingVolume& patient, const Transform2d& trans2, Health& health) {
+        ECS::query<HealthInteractionVolume, Transform2d, Health>([&](const Entity e2, const HealthInteractionVolume& patient, const Transform2d& trans2, Health& health) {
             if (!BitLayers::checkMask(healingVolume.mask, patient.layer)) return;
 
             const auto rect1 = GameUtil::centeredRect(
@@ -375,7 +379,7 @@ namespace UnitComponents {
 
             if (CheckCollisionRecs(rect1, rect2)) {
                 healingVolume.lastHeal = Timestamp::now();
-                health.heal(healingVolume.healing);
+                health.heal(healingVolume.healing, trans.position);
 
                 OnHealingDealtByVolume evt = {
                     .doctor = e1,
@@ -388,7 +392,7 @@ namespace UnitComponents {
     }
 
     inline void debugVolumes() {
-        ECS::query<IncomingHealthModifyingVolume, Transform2d>([](const Entity, const IncomingHealthModifyingVolume& damageReceiver, const Transform2d& trans) {
+        ECS::query<HealthInteractionVolume, Transform2d>([](const Entity, const HealthInteractionVolume& damageReceiver, const Transform2d& trans) {
             const auto rect1 = GameUtil::centeredRect(
                trans.position.x, trans.position.y,
                damageReceiver.dimensions.x, damageReceiver.dimensions.y);
@@ -448,7 +452,7 @@ namespace UnitComponents {
     }
 }
 
-Entity InternalSpawning::spawnPopupText(const std::string& text, const PopupTextStyle style, const Vec2 position, const Color tint) {
+inline Entity InternalSpawning::spawnPopupText(const std::string& text, const PopupTextStyle style, const Vec2 position, const Color tint) {
     return Spawning::spawnPopupText(text, style, position, tint);
 }
 

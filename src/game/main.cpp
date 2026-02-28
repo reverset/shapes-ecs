@@ -232,14 +232,10 @@ int main() {
             // .addComponent(TilemapRenderTracker())
             // .addComponent(TilemapCollider(16, 16))
             .addComponent(RenderLayer3())
-            .addComponent(IncomingHealthModifyingVolume(BitLayers::PLAYER_LAYER, {16, 16}))
+            .addComponent(HealthInteractionVolume(BitLayers::PLAYER_LAYER, {16, 16}))
             .addComponent(CollisionRect(16, 16, BitLayers::PLAYER_LAYER, BitLayers::NONE))
             .addComponent(Health(200))
             .addComponent(PlayerHealthBar());
-
-        for (float i = 0; i < 2; i += 1) {
-            Enemies::spawnMeanie({120, 6 + (i*16)});
-        }
 
         StandardEntityPresets::makeBackground(AssetStore::getBackgroundTexture(), 0.08f);
 
