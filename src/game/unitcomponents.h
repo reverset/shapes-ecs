@@ -228,6 +228,7 @@ namespace Spawning {
 
         return Universe::getEntityStorage().makeEntity()
             .addComponent(HealingHeart())
+            .addComponent(Velocity(vel))
             .addComponent(HealingVolume(BitLayers::PLAYER_LAYER, healing, {16, 16}, Duration::ofSeconds(1.0)))
             .addComponent(std::move(sprite))
             .addComponent(AutoShaderGameTimeUpdate())

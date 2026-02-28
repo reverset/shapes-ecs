@@ -199,8 +199,10 @@ namespace Enemies {
             .addComponent(Attached(shield))
             .addComponent(HealthInteractionVolume(BitLayers::ENEMY_LAYER, texture->getDimensions()))
             .addComponent(RemoveOnDeath([shield](const Entity e) {
-                ECS::queryComponentsFor<Targeter>(e, [](const Entity, const Targeter& ta) {
+                ECS::queryComponentsFor<Targeter, Transform2d>(e, [](const Entity, const Targeter& ta, const Transform2d& trans) {
                     auto& es = Universe::getEntityStorage();
+
+                    Spawning::spawnHealingHeart(25, trans.position, Vec2::randomDirection(25));
 
                     for (const auto target : ta.targets) {
                         es.destroyEntity(target);
