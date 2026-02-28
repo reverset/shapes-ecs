@@ -18,6 +18,7 @@
 #include "../engine/tilemap.h"
 #include "../engine/ui.h"
 #include "../engine/anim.h"
+#include "GLFW/glfw3.h"
 
 struct PlayerHealthBar : Component<PlayerHealthBar> {
     COMPONENT_STORAGE(PlayerHealthBar);
@@ -170,6 +171,9 @@ void debugButtons(const Entity, const Player&, const Transform2d& trans) {
         Logging::log("spawning heart");
         const auto desiredPos = trans.position + Vec2::randomDirection(30);
         Spawning::spawnHealingHeart(10, desiredPos, Vec2::zero());
+    } else if (IsKeyPressed(KEY_M)) {
+        // SetConfigFlags(FLAG_VSYNC_HINT);
+        glfwSwapInterval(1);
     }
 }
 #endif
