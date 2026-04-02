@@ -2,6 +2,7 @@
 #define GAME_RANDOMGEN_H
 
 #include <cinttypes>
+#include <cstddef>
 
 namespace RandomGen {
     void init();
