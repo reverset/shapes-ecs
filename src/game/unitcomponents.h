@@ -14,6 +14,30 @@
 #include "../engine/logging.h"
 #include "../engine/util.h"
 
+struct DamageData {
+    Entity attacker;
+
+    std::int32_t damage;
+
+    int32_t flags = 0;
+
+    explicit DamageData(const Entity attacker, const std::int32_t damage, const bool isCritical = false) : attacker(attacker), damage(damage) {}
+
+    [[nodiscard]] DamageData setCritical(const bool crit) {
+        flags = BitLayers::setBit(flags, 0, crit);
+        return *this;
+    }
+
+    [[nodiscard]] bool isCritical() const {
+        return BitLayers::checkMask(flags, BitLayers::bit(0));
+    }
+
+    [[nodiscard]] bool isHealing() const {
+        return damage < 0;
+    }
+    
+};
+
 enum PopupTextStyle {
     PULSE_STYLE,
 };
@@ -77,28 +101,37 @@ struct Health : Component<Health> {
         this->health = maxHealth;
     }
 
-    void heal(const std::uint32_t healing, const Vec2 where = Vec2::nan()) {
+    void heal(const std::uint32_t healing, const Vec2 where = Vec2::nan(), const Color color = LIME) {
         health = GameUtil::clamp(health + static_cast<std::int32_t>(healing), 0, maxHealth);
         lastHeal = Timestamp::now();
 
         if (!where.isNan()) { // make function for this
-            Universe::defer([healing, where] {
+            Universe::defer([healing, where, color] {
                 const std::string text = std::format("+{}", healing);
-                InternalSpawning::spawnPopupText(text, PULSE_STYLE, where, LIME);
+                InternalSpawning::spawnPopupText(text, PULSE_STYLE, where, color);
             });
         }
     }
 
-    void damage(const std::uint32_t dmg, const Vec2 where = Vec2::nan()) { // todo damage struct
+    void damage(const std::uint32_t dmg, const Vec2 where = Vec2::nan(), const Color color = GOLD) { // todo damage struct
         health = GameUtil::clamp(health - static_cast<std::int32_t>(dmg), 0, maxHealth);
         lastDamage = Timestamp::now();
 
         if (!where.isNan()) { // make function for this
-            Universe::defer([dmg, where] {
+            Universe::defer([dmg, where, color] {
                 const std::string text = std::format("{}{}", dmg, GameUtil::repeatStr("!", RandomGen::randomSizet(0, 3)));
-                InternalSpawning::spawnPopupText(text, PULSE_STYLE, where, GOLD);
+                InternalSpawning::spawnPopupText(text, PULSE_STYLE, where, color);
             });
         }
+    }
+
+    void applyDamageData(const DamageData& data, const Vec2 where = Vec2::nan()) {
+        if (data.isHealing()) {
+            heal(static_cast<std::uint32_t>(-data.damage), where);
+        } else {
+            damage(static_cast<std::uint32_t>(data.damage), where);
+        }
+
     }
 
     [[nodiscard]] bool isDead() const {

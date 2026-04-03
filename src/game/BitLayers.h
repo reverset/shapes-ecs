@@ -7,8 +7,12 @@
 namespace BitLayers {
     using Type = std::uint32_t;
 
-    [[nodiscard]] consteval Type bit(const std::int32_t where) {
+    [[nodiscard]] constexpr Type bit(const std::int32_t where) {
         return 1u << where;
+    }
+
+    [[nodiscard]] constexpr Type setBit(const Type value, const std::int32_t where, const bool on = true) {
+        return (value & ~bit(where)) | (on ? bit(where) : 0);
     }
 
     constexpr Type NONE = 0;
