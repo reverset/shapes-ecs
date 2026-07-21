@@ -3,12 +3,15 @@
 
 #include <string>
 
+#include "raylib.h"
+
 namespace Files {
     [[nodiscard]] inline std::string path(const std::string& str) {
+        const std::string& dir = GetApplicationDirectory();
         #ifndef NDEBUG
-        return "../resources/" + str;
+        return dir + "/../resources/" + str;
         #else
-        return "resources/" + str;
+        return dir + "/resources/" + str;
         #endif
     }
 
