@@ -20,6 +20,8 @@
 #include "../engine/anim.h"
 #include "GLFW/glfw3.h"
 
+#include "../engine/ecs2.h"
+
 struct PlayerHealthBar : Component<PlayerHealthBar> {
     COMPONENT_STORAGE(PlayerHealthBar);
 };
@@ -178,7 +180,22 @@ void debugButtons(const Entity, const Player&, const Transform2d& trans) {
 }
 #endif
 
+void testing() {
+    ECS2::World world;
+    auto& arch = world.getArchetype<Health, Transform2d>();
+    arch.add(ECS2::Entity{.id=0}, Health(100), Transform2d{});
+    const ECS2::Query<Health, Transform2d> query{&world};
+
+    std::size_t count = 0;
+    for (const auto& tup : query) {
+        count += 1;
+    }
+
+    Logging::log("Total of %d entities.", count);
+}
+
 int main() {
+    testing();
     Universe::init(640, 360, "Pixel Space", [] {
         AssetStore::initialLoadAll();
 
