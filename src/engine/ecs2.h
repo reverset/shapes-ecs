@@ -181,8 +181,8 @@ namespace ECS2 {
         World& operator=(const World&) = delete;
 
         ~World() {
-            // dropStores();
-            // dropArchetypes();
+            dropStores();
+            dropArchetypes();
         }
 
         template<typename T>
@@ -205,14 +205,14 @@ namespace ECS2 {
 
         void dropStores() {
             for (auto& store : stores) {
-                store.destroy(&store);
+                store.destroy(store.store);
             }
             stores.clear();
         }
 
         void dropArchetypes() {
             for (auto& store : archetypes) {
-                store.destroy(&store);
+                store.destroy(store.store);
             }
             archetypes.clear();
         }

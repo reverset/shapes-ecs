@@ -187,8 +187,8 @@ void testing() {
     const ECS2::Query<Health, Transform2d> query{&world};
 
     std::size_t count = 0;
-    for (const auto& tup : query) {
-        count += 1;
+    for (const auto& [health, trans] : query) {
+        Logging::log("Health=%d, pos=%s", health.health, trans.position.toString().c_str());
     }
 
     Logging::log("Total of %d entities.", count);
