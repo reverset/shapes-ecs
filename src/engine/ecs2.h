@@ -122,9 +122,20 @@ namespace ECS2 {
 
     template<typename... T>
     struct Archetype {
+        static constexpr std::size_t typeCount = sizeof...(T);
+
+        std::array<TypeId, typeCount> types;
         std::vector<Entity> entities;
         std::vector<std::tuple<T...>> dense;
         std::unordered_map<Entity, std::size_t> sparse;
+
+        Archetype() {
+            types = {typeId<T>()...};
+        }
+
+        [[nodiscard]] bool containsTypeById(const TypeId id) {
+            return std::ranges::any_of(types, [id](const TypeId other) { return other == id; });
+        }
 
         void add(const Entity e, T&&... comps) {
             if (contains(e)) {
@@ -161,12 +172,19 @@ namespace ECS2 {
     struct ErasedArchetype {
         void* store = nullptr;
         void (*destroy)(void*) = nullptr;
+        bool (*containsTypeById)(void*, TypeId) = nullptr;
+
+        template <typename T>
+        [[nodiscard]] bool containsType() {
+            return containsTypeById(store, typeId<T>());
+        }
 
         template <typename... T>
         static ErasedArchetype make() {
             return {
                 new Archetype<T...>,
                 [](void* p) { delete static_cast<Archetype<T...>*>(p); },
+                [](void* p, const TypeId id) { return static_cast<Archetype<T...>*>(p)->containsTypeById(id); },
             };
         }
     };
